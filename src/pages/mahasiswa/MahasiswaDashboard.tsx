@@ -27,7 +27,7 @@ export default function MahasiswaDashboard() {
       value: "2",
       description: "Alat aktif",
       icon: TestTube,
-      trend: "+1",
+      trend: "+1%",
       color: "text-blue-600",
       bgColor: "bg-blue-100"
     },
@@ -36,7 +36,7 @@ export default function MahasiswaDashboard() {
       value: "12",
       description: "Semester ini",
       icon: BookOpen,
-      trend: "+3",
+      trend: "+3%",
       color: "text-green-600",
       bgColor: "bg-green-100"
     },
@@ -54,7 +54,7 @@ export default function MahasiswaDashboard() {
       value: "8",
       description: "Dikembalikan",
       icon: CheckCircle,
-      trend: "+2",
+      trend: "+2%",
       color: "text-purple-600",
       bgColor: "bg-purple-100"
     }
@@ -143,23 +143,27 @@ export default function MahasiswaDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
             <Card key={index} className="hover:shadow-hover transition-all duration-300 border-0 shadow-card">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {stat.title}
-                    </p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-                  </div>
-                  <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {stat.title}
+                </CardTitle>
+                <div className={`${stat.bgColor} p-2 rounded-lg`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
-                <div className="mt-4 flex items-center">
-                  <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
-                  <span className="text-xs text-green-600 font-medium">{stat.trend}</span>
-                  <span className="text-xs text-muted-foreground ml-1">dari bulan lalu</span>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold mb-1">{stat.value}</div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">{stat.description}</p>
+                  <div className={`text-xs font-medium ${
+                    stat.trend.startsWith('+') ? 'text-green-600' : 
+                    stat.trend.startsWith('-') ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {stat.trend !== '=' && (
+                      <TrendingUp className="h-3 w-3 inline mr-1" />
+                    )}
+                    {stat.trend}
+                  </div>
                 </div>
               </CardContent>
             </Card>
