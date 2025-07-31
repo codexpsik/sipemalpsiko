@@ -16,6 +16,7 @@ import ManageReturning from "./pages/admin/ManageReturning";
 import DosenDashboard from "./pages/dosen/DosenDashboard";
 import MahasiswaDashboard from "./pages/mahasiswa/MahasiswaDashboard";
 import PeminjamanPage from "./pages/PeminjamanPage";
+import PengembalianPage from "./pages/PengembalianPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/dosen" element={<DosenDashboard />} />
           <Route path="/mahasiswa" element={<MahasiswaDashboard />} />
           <Route path="/peminjaman" element={<PeminjamanPage />} />
+          <Route path="/pengembalian" element={<PengembalianPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
