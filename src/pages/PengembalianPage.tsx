@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import Navbar from "@/components/Navbar";
+import { Navbar } from "@/components/Navbar";
 
 interface BorrowingRecord {
   id: string;
@@ -121,14 +121,15 @@ export default function PengembalianPage() {
       // If overdue, create penalty record
       if (isOverdue(selectedBorrowing.tanggal_kembali)) {
         const penaltyAmount = calculatePenalty(selectedBorrowing.tanggal_kembali);
-        await supabase
-          .from('penalties')
-          .insert({
-            borrowing_id: selectedBorrowing.id,
-            amount: penaltyAmount,
-            reason: `Keterlambatan ${getDaysLate(selectedBorrowing.tanggal_kembali)} hari`,
-            status: 'pending'
-          });
+        const { error: penaltyError } = await supabase.rpc('create_penalty_record', {
+          p_borrowing_id: selectedBorrowing.id,
+          p_amount: penaltyAmount,
+          p_reason: `Keterlambatan ${getDaysLate(selectedBorrowing.tanggal_kembali)} hari`
+        });
+        
+        if (penaltyError) {
+          console.error('Error creating penalty:', penaltyError);
+        }
       }
 
       toast({

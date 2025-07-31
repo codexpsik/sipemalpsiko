@@ -176,6 +176,48 @@ export type Database = {
           },
         ]
       }
+      penalties: {
+        Row: {
+          amount: number
+          borrowing_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          reason: string
+          status: string
+          updated_at: string
+          waived_at: string | null
+          waived_by: string | null
+        }
+        Insert: {
+          amount?: number
+          borrowing_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          reason: string
+          status?: string
+          updated_at?: string
+          waived_at?: string | null
+          waived_by?: string | null
+        }
+        Update: {
+          amount?: number
+          borrowing_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          reason?: string
+          status?: string
+          updated_at?: string
+          waived_at?: string | null
+          waived_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -264,6 +306,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
       }
     }
     Views: {
