@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -85,10 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
+        console.log('Profile found:', data.role);
         setProfile(data);
       } else {
-        // Profile doesn't exist, user needs to complete registration
-        console.log('Profile not found for user:', userId);
+        console.log('No profile found for user:', userId);
         setProfile(null);
       }
     } catch (error) {

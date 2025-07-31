@@ -18,6 +18,7 @@ import ManageCategories from "./pages/admin/ManageCategories";
 import ManageTools from "./pages/admin/ManageTools";
 import ManageBorrowing from "./pages/admin/ManageBorrowing";
 import ManageReturning from "./pages/admin/ManageReturning";
+import AuditLogs from "./pages/admin/AuditLogs";
 import DosenDashboard from "./pages/dosen/DosenDashboard";
 import MahasiswaDashboard from "./pages/mahasiswa/MahasiswaDashboard";
 import PeminjamanPage from "./pages/PeminjamanPage";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="tools" element={<ManageTools />} />
               <Route path="borrowing" element={<ManageBorrowing />} />
               <Route path="returning" element={<ManageReturning />} />
+              <Route path="audit-logs" element={<AuditLogs />} />
             </Route>
 
             {/* Protected User Routes */}
