@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, profile } = useAuth();
   const navigate = useNavigate();
 
   // Login form state
@@ -33,12 +33,24 @@ export default function Auth() {
     role: "mahasiswa" as "admin" | "dosen" | "mahasiswa",
   });
 
-  // Redirect authenticated users
+  // Redirect authenticated users to their role-specific dashboard
   useEffect(() => {
-    if (user) {
-      navigate('/');
+    if (user && profile?.role) {
+      switch (profile.role) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'dosen':
+          navigate('/dosen');
+          break;
+        case 'mahasiswa':
+          navigate('/mahasiswa');
+          break;
+        default:
+          navigate('/');
+      }
     }
-  }, [user, navigate]);
+  }, [user, profile, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +59,28 @@ export default function Auth() {
     const { error } = await signIn(loginData.email, loginData.password);
     
     if (!error) {
-      navigate('/');
+      // Wait for profile to be loaded, then redirect based on role
+      const checkProfileAndRedirect = () => {
+        if (profile?.role) {
+          switch (profile.role) {
+            case 'admin':
+              navigate('/admin');
+              break;
+            case 'dosen':
+              navigate('/dosen');
+              break;
+            case 'mahasiswa':
+              navigate('/mahasiswa');
+              break;
+            default:
+              navigate('/');
+          }
+        } else {
+          // If profile not loaded yet, check again after a short delay
+          setTimeout(checkProfileAndRedirect, 500);
+        }
+      };
+      checkProfileAndRedirect();
     }
     
     setIsLoading(false);
