@@ -84,9 +84,9 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
                   <TestTube className="mr-2 h-4 w-4" />
                   Habis Pakai
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePeminjamanClick}>
+                <DropdownMenuItem onClick={() => navigate('/pengembalian')}>
                   <BookOpen className="mr-2 h-4 w-4" />
-                  Copy 1
+                  Pengembalian Alat
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

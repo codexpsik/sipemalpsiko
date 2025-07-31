@@ -121,6 +121,8 @@ export default function PengembalianPage() {
       // If overdue, create penalty record
       if (isOverdue(selectedBorrowing.tanggal_kembali)) {
         const penaltyAmount = calculatePenalty(selectedBorrowing.tanggal_kembali);
+        
+        // Create penalty using RPC function since types aren't updated yet
         const { error: penaltyError } = await supabase.rpc('create_penalty_record', {
           p_borrowing_id: selectedBorrowing.id,
           p_amount: penaltyAmount,

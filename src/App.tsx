@@ -15,8 +15,8 @@ import ManageBorrowing from "./pages/admin/ManageBorrowing";
 import ManageReturning from "./pages/admin/ManageReturning";
 import DosenDashboard from "./pages/dosen/DosenDashboard";
 import MahasiswaDashboard from "./pages/mahasiswa/MahasiswaDashboard";
-import PeminjamanPage from "./pages/PeminjamanPage";
 import PengembalianPage from "./pages/PengembalianPage";
+import PeminjamanPage from "./pages/PeminjamanPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
