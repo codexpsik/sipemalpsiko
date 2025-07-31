@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, user, profile } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   // Login form state
@@ -76,21 +78,32 @@ export default function Auth() {
     e.preventDefault();
     
     if (registerData.password !== registerData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Password tidak cocok",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
 
-    const { error } = await signUp(registerData.email, registerData.password, {
+    const profileData = {
       nama: registerData.nama,
       username: registerData.username,
+      role: registerData.role,
       nim: registerData.nim,
       nomor_whatsapp: registerData.nomor_whatsapp,
       jenis_kelamin: registerData.jenis_kelamin,
-      role: registerData.role,
-    });
+    };
 
+    const { error } = await signUp(registerData.email, registerData.password, profileData);
+    
     if (!error) {
+      toast({
+        title: "Berhasil",
+        description: "Akun berhasil dibuat! Silakan periksa email untuk konfirmasi.",
+      });
       // Reset form
       setRegisterData({
         email: "",
@@ -104,7 +117,7 @@ export default function Auth() {
         role: "mahasiswa",
       });
     }
-
+    
     setIsLoading(false);
   };
 
