@@ -1,0 +1,354 @@
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Navbar } from "@/components/Navbar";
+import { 
+  BookOpen, 
+  TestTube, 
+  Clock,
+  CheckCircle,
+  Star,
+  Calendar,
+  TrendingUp,
+  AlertTriangle,
+  FileText,
+  User,
+  GraduationCap
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+export default function MahasiswaDashboard() {
+  const navigate = useNavigate();
+
+  const stats = [
+    {
+      title: "Sedang Dipinjam",
+      value: "2",
+      description: "Alat aktif",
+      icon: TestTube,
+      trend: "+1",
+      color: "text-blue-600",
+      bgColor: "bg-blue-100"
+    },
+    {
+      title: "Total Peminjaman", 
+      value: "12",
+      description: "Semester ini",
+      icon: BookOpen,
+      trend: "+3",
+      color: "text-green-600",
+      bgColor: "bg-green-100"
+    },
+    {
+      title: "Dalam Antrian",
+      value: "1",
+      description: "Copy 1",
+      icon: Clock,
+      trend: "=",
+      color: "text-orange-600",
+      bgColor: "bg-orange-100"
+    },
+    {
+      title: "Selesai",
+      value: "8",
+      description: "Dikembalikan",
+      icon: CheckCircle,
+      trend: "+2",
+      color: "text-purple-600",
+      bgColor: "bg-purple-100"
+    }
+  ];
+
+  const currentBorrows = [
+    {
+      id: "1",
+      toolName: "Beck Depression Inventory (BDI-II)",
+      category: "Habis Pakai",
+      startDate: "2024-01-22",
+      dueDate: "2024-01-22",
+      status: "completed",
+      purpose: "Tugas akhir"
+    },
+    {
+      id: "2",
+      toolName: "WAIS-IV (Wechsler Adult Intelligence Scale)",
+      category: "Harus Dikembalikan", 
+      startDate: "2024-01-20",
+      dueDate: "2024-01-27",
+      status: "active",
+      purpose: "Penelitian skripsi",
+      daysLeft: 3
+    }
+  ];
+
+  const queueStatus = [
+    {
+      id: "1",
+      toolName: "TAT (Thematic Apperception Test)",
+      category: "Copy 1",
+      position: 2,
+      estimatedDate: "2024-01-28",
+      currentUser: "Prof. Michael Lee"
+    }
+  ];
+
+  const upcomingDeadlines = [
+    {
+      id: "1",
+      toolName: "WAIS-IV (Wechsler Adult Intelligence Scale)",
+      dueDate: "2024-01-27",
+      daysLeft: 3,
+      category: "Harus Dikembalikan"
+    }
+  ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Aktif</Badge>;
+      case "completed":
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Selesai</Badge>;
+      case "queue":
+        return <Badge variant="outline" className="text-orange-600 border-orange-300">Antrian</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  const getUrgencyIcon = (daysLeft: number) => {
+    if (daysLeft <= 1) {
+      return <AlertTriangle className="h-4 w-4 text-red-600" />;
+    } else if (daysLeft <= 3) {
+      return <Clock className="h-4 w-4 text-yellow-600" />;
+    }
+    return <CheckCircle className="h-4 w-4 text-green-600" />;
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar isAuthenticated={true} userRole="mahasiswa" userName="Ahmad Rizki" />
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
+            <GraduationCap className="h-8 w-8" />
+            Dashboard Mahasiswa
+          </h1>
+          <p className="text-muted-foreground">Selamat datang kembali, Ahmad Rizki! NIM: 2021001</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => (
+            <Card key={index} className="hover:shadow-hover transition-all duration-300 border-0 shadow-card">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {stat.title}
+                    </p>
+                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  </div>
+                  <div className={`${stat.bgColor} p-3 rounded-lg`}>
+                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
+                  <span className="text-xs text-green-600 font-medium">{stat.trend}</span>
+                  <span className="text-xs text-muted-foreground ml-1">dari bulan lalu</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <Card className="mb-8 shadow-card border-0">
+          <CardHeader>
+            <CardTitle>Aksi Cepat</CardTitle>
+            <CardDescription>Fitur yang sering digunakan untuk mahasiswa</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              <Button 
+                className="gap-2" 
+                onClick={() => navigate('/peminjaman')}
+              >
+                <TestTube className="h-4 w-4" />
+                Pinjam Alat Test
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => navigate('/history')}
+              >
+                <FileText className="h-4 w-4" />
+                Riwayat Peminjaman
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => navigate('/queue')}
+              >
+                <Clock className="h-4 w-4" />
+                Status Antrian
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => navigate('/profile')}
+              >
+                <User className="h-4 w-4" />
+                Edit Profile
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+          {/* Current Borrows */}
+          <Card className="shadow-card border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TestTube className="h-5 w-5" />
+                Sedang Dipinjam
+              </CardTitle>
+              <CardDescription>
+                Alat yang sedang Anda pinjam
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {currentBorrows.filter(b => b.status === 'active').map((borrow) => (
+                  <div key={borrow.id} className="p-4 bg-muted/30 rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm truncate">{borrow.toolName}</h4>
+                        <p className="text-xs text-muted-foreground mt-1">{borrow.category}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Tujuan: {borrow.purpose}</p>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
+                        {borrow.daysLeft && getUrgencyIcon(borrow.daysLeft)}
+                        <span className="text-xs font-medium">
+                          {borrow.daysLeft && borrow.daysLeft > 0 ? `${borrow.daysLeft} hari` : 'Hari ini'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs text-muted-foreground">
+                        Deadline: {new Date(borrow.dueDate).toLocaleDateString('id-ID')}
+                      </div>
+                      {getStatusBadge(borrow.status)}
+                    </div>
+                  </div>
+                ))}
+                
+                {currentBorrows.filter(b => b.status === 'active').length === 0 && (
+                  <div className="text-center py-8">
+                    <TestTube className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Tidak ada alat yang sedang dipinjam</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => navigate('/peminjaman')}
+                    >
+                      Pinjam Alat Sekarang
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Queue Status */}
+          <Card className="shadow-card border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Status Antrian
+              </CardTitle>
+              <CardDescription>
+                Antrian alat kategori Copy 1
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {queueStatus.map((queue) => (
+                  <div key={queue.id} className="p-4 bg-muted/30 rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm truncate">{queue.toolName}</h4>
+                        <p className="text-xs text-muted-foreground mt-1">{queue.category}</p>
+                      </div>
+                      <Badge variant="outline" className="text-orange-600 border-orange-300">
+                        Posisi #{queue.position}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <div>Sedang dipinjam: {queue.currentUser}</div>
+                      <div>Estimasi tersedia: {new Date(queue.estimatedDate).toLocaleDateString('id-ID')}</div>
+                    </div>
+                  </div>
+                ))}
+                
+                {queueStatus.length === 0 && (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Tidak ada antrian saat ini</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Upcoming Deadlines */}
+        <Card className="shadow-card border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Deadline Terdekat
+            </CardTitle>
+            <CardDescription>
+              Alat yang harus segera dikembalikan
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {upcomingDeadlines.map((deadline) => (
+                <div key={deadline.id} className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {getUrgencyIcon(deadline.daysLeft)}
+                    <div>
+                      <h4 className="font-medium text-sm">{deadline.toolName}</h4>
+                      <p className="text-xs text-muted-foreground">{deadline.category}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-red-600">
+                      {deadline.daysLeft > 0 ? `${deadline.daysLeft} hari lagi` : 'Hari ini'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(deadline.dueDate).toLocaleDateString('id-ID')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {upcomingDeadlines.length === 0 && (
+                <div className="text-center py-8">
+                  <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <p className="text-muted-foreground">Tidak ada deadline mendesak</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

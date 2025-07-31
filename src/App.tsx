@@ -13,6 +13,10 @@ import ManageCategories from "./pages/admin/ManageCategories";
 import ManageTools from "./pages/admin/ManageTools";
 import ManageBorrowing from "./pages/admin/ManageBorrowing";
 import ManageReturning from "./pages/admin/ManageReturning";
+import DosenDashboard from "./pages/dosen/DosenDashboard";
+import MahasiswaDashboard from "./pages/mahasiswa/MahasiswaDashboard";
+import PeminjamanPage from "./pages/PeminjamanPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +41,12 @@ const App = () => (
             <Route path="borrowing" element={<ManageBorrowing />} />
             <Route path="returning" element={<ManageReturning />} />
           </Route>
+
+          {/* User Routes */}
+          <Route path="/dosen" element={<DosenDashboard />} />
+          <Route path="/mahasiswa" element={<MahasiswaDashboard />} />
+          <Route path="/peminjaman" element={<PeminjamanPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

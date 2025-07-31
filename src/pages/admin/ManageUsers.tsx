@@ -119,13 +119,21 @@ export default function ManageUsers() {
     }
   ]);
 
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<{
+    nama: string;
+    nim: string;
+    email: string;
+    whatsapp: string;
+    jenisKelamin: string;
+    role: 'dosen' | 'mahasiswa';
+    password: string;
+  }>({
     nama: "",
     nim: "",
     email: "",
     whatsapp: "",
     jenisKelamin: "",
-    role: "mahasiswa" as const,
+    role: "mahasiswa",
     password: ""
   });
 
