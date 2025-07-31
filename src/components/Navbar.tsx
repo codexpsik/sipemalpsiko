@@ -69,29 +69,6 @@ export function Navbar() {
             <Link to="/katalog" className="text-foreground hover:text-primary transition-colors">
               Katalog Alat
             </Link>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2">
-                  <TestTube className="h-4 w-4" />
-                  Peminjaman
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuItem onClick={handlePeminjamanClick}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Harus Dikembalikan
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePeminjamanClick}>
-                  <TestTube className="mr-2 h-4 w-4" />
-                  Habis Pakai
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/pengembalian')}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Pengembalian Alat
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
 
             {user ? (
               <div className="flex items-center space-x-4">
@@ -172,18 +149,6 @@ export function Navbar() {
             >
               Katalog Alat
             </Link>
-            
-            <Button 
-              variant="ghost" 
-              onClick={() => {
-                handlePeminjamanClick();
-                setIsOpen(false);
-              }}
-              className="w-full justify-start gap-2"
-            >
-              <TestTube className="h-4 w-4" />
-              Peminjaman Alat
-            </Button>
 
             {user ? (
               <div className="space-y-2 pt-2 border-t border-border/20">
