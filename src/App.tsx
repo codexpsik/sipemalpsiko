@@ -8,6 +8,11 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import ManageUsers from "./pages/admin/ManageUsers";
+import ManageCategories from "./pages/admin/ManageCategories";
+import ManageTools from "./pages/admin/ManageTools";
+import ManageBorrowing from "./pages/admin/ManageBorrowing";
+import ManageReturning from "./pages/admin/ManageReturning";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +31,11 @@ const App = () => (
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<ManageUsers />} />
+            <Route path="categories" element={<ManageCategories />} />
+            <Route path="tools" element={<ManageTools />} />
+            <Route path="borrowing" element={<ManageBorrowing />} />
+            <Route path="returning" element={<ManageReturning />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
