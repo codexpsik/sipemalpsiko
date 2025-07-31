@@ -188,6 +188,14 @@ export default function MahasiswaDashboard() {
               <Button 
                 variant="outline" 
                 className="gap-2"
+                onClick={() => navigate('/pengembalian')}
+              >
+                <CheckCircle className="h-4 w-4" />
+                Kembalikan Alat
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2"
                 onClick={() => navigate('/history')}
               >
                 <FileText className="h-4 w-4" />
