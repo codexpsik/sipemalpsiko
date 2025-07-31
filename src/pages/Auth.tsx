@@ -218,6 +218,7 @@ export default function Auth() {
                         <SelectContent>
                           <SelectItem value="mahasiswa">Mahasiswa</SelectItem>
                           <SelectItem value="dosen">Dosen</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
