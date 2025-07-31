@@ -37,31 +37,25 @@ export default function Auth() {
   useEffect(() => {
     console.log('Auth useEffect - user:', !!user, 'profile:', profile?.role);
     
-    if (user) {
-      if (profile?.role) {
-        // User has a profile, redirect to role-specific dashboard
-        console.log('Redirecting to dashboard for role:', profile.role);
-        switch (profile.role) {
-          case 'admin':
-            navigate('/admin');
-            break;
-          case 'dosen':
-            navigate('/dosen');
-            break;
-          case 'mahasiswa':
-            navigate('/mahasiswa');
-            break;
-          default:
-            navigate('/');
-        }
-      } else if (profile === null) {
-        // Profile is explicitly null (user exists but no profile)
-        console.log('User logged in but no profile found - refreshing to load profile');
-        // Try to refresh profile one more time
-        window.location.reload();
+    if (user && profile?.role) {
+      // User has a profile, redirect to role-specific dashboard
+      console.log('Redirecting to dashboard for role:', profile.role);
+      switch (profile.role) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'dosen':
+          navigate('/dosen');
+          break;
+        case 'mahasiswa':
+          navigate('/mahasiswa');
+          break;
+        default:
+          navigate('/');
       }
-      // If profile is undefined, still loading, so wait
     }
+    // Remove the automatic refresh - it causes infinite loop
+    // If profile is null, show error message instead
   }, [user, profile, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
