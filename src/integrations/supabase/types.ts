@@ -339,7 +339,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_penalty_record: {
+        Args: { p_borrowing_id: string; p_amount: number; p_reason: string }
+        Returns: undefined
+      }
     }
     Enums: {
       borrowing_status: "pending" | "approved" | "returned" | "rejected"
