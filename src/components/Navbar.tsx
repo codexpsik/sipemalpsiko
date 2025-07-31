@@ -9,40 +9,38 @@ import {
   BookOpen, 
   TestTube,
   LogIn,
-  UserPlus
+  UserPlus,
+  LogOut
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
 
-interface NavbarProps {
-  isAuthenticated?: boolean;
-  userRole?: 'admin' | 'dosen' | 'mahasiswa';
-  userName?: string;
-}
-
-export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarProps) {
+export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
 
   const handlePeminjamanClick = () => {
-    if (!isAuthenticated) {
-      navigate('/login');
+    if (!user) {
+      navigate('/auth');
       return;
     }
     navigate('/peminjaman');
   };
 
-  const handleLogout = () => {
-    // Handle logout logic here
-    console.log('Logout clicked');
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
 
   const getDashboardRoute = () => {
-    switch (userRole) {
+    switch (profile?.role) {
       case 'admin': return '/admin';
       case 'dosen': return '/dosen';
       case 'mahasiswa': return '/mahasiswa';
@@ -91,7 +89,7 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {isAuthenticated ? (
+            {user ? (
               <div className="flex items-center space-x-4">
                 <Button 
                   variant="outline" 
@@ -107,10 +105,10 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
                     <Button variant="ghost" className="gap-2">
                       <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
                         <span className="text-xs text-primary-foreground font-medium">
-                          {userName?.charAt(0).toUpperCase() || 'U'}
+                          {profile?.nama?.charAt(0).toUpperCase() || 'U'}
                         </span>
                       </div>
-                      <span className="hidden lg:inline">{userName}</span>
+                      <span className="hidden lg:inline">{profile?.nama || 'User'}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-48">
@@ -118,8 +116,9 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
                       <User className="mr-2 h-4 w-4" />
                       Edit Profile
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                      <LogIn className="mr-2 h-4 w-4" />
+                      <LogOut className="mr-2 h-4 w-4" />
                       Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -127,11 +126,11 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <Button variant="ghost" onClick={() => navigate('/login')}>
+                <Button variant="ghost" onClick={() => navigate('/auth')}>
                   <LogIn className="mr-2 h-4 w-4" />
                   Login
                 </Button>
-                <Button variant="hero" onClick={() => navigate('/register')}>
+                <Button variant="hero" onClick={() => navigate('/auth')}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   Daftar
                 </Button>
@@ -174,7 +173,7 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
               Peminjaman Alat
             </Button>
 
-            {isAuthenticated ? (
+            {user ? (
               <div className="space-y-2 pt-2 border-t border-border/20">
                 <Button 
                   variant="outline" 
@@ -203,7 +202,7 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
                   onClick={handleLogout}
                   className="w-full justify-start gap-2 text-destructive"
                 >
-                  <LogIn className="h-4 w-4" />
+                  <LogOut className="h-4 w-4" />
                   Logout
                 </Button>
               </div>
@@ -212,7 +211,7 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
                 <Button 
                   variant="ghost" 
                   onClick={() => {
-                    navigate('/login');
+                    navigate('/auth');
                     setIsOpen(false);
                   }}
                   className="w-full justify-start gap-2"
@@ -223,7 +222,7 @@ export function Navbar({ isAuthenticated = false, userRole, userName }: NavbarPr
                 <Button 
                   variant="hero" 
                   onClick={() => {
-                    navigate('/register');
+                    navigate('/auth');
                     setIsOpen(false);
                   }}
                   className="w-full justify-start gap-2"

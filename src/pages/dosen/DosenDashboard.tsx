@@ -139,7 +139,7 @@ export default function DosenDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar isAuthenticated={true} userRole="dosen" userName="Dr. Sarah Wilson" />
+      <Navbar />
       
       <div className="container mx-auto px-4 py-8">
         {/* Header */}

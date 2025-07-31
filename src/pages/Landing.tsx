@@ -83,7 +83,7 @@ export default function Landing() {
               <Button 
                 variant="hero" 
                 size="xl"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/auth')}
                 className="gap-3"
               >
                 <GraduationCap className="h-5 w-5" />
@@ -93,7 +93,7 @@ export default function Landing() {
               <Button 
                 variant="outline" 
                 size="xl"
-                onClick={() => navigate('/peminjaman')}
+                onClick={() => navigate('/auth')}
                 className="gap-3"
               >
                 <TestTube className="h-5 w-5" />
@@ -143,7 +143,7 @@ export default function Landing() {
                   <Button 
                     variant="outline" 
                     className="w-full mt-6 gap-2"
-                    onClick={() => navigate('/peminjaman')}
+                    onClick={() => navigate('/auth')}
                   >
                     Lihat Semua
                     <ArrowRight className="h-4 w-4" />
@@ -196,7 +196,7 @@ export default function Landing() {
             <Button 
               variant="secondary" 
               size="xl"
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/auth')}
               className="gap-3"
             >
               <GraduationCap className="h-5 w-5" />
@@ -205,7 +205,7 @@ export default function Landing() {
             <Button 
               variant="glass" 
               size="xl"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/auth')}
               className="gap-3 text-white border-white/30"
             >
               Sudah Punya Akun? Login
