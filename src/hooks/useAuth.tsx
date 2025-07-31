@@ -160,6 +160,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
+          toast({
+            title: "Warning",
+            description: "Akun berhasil dibuat, tapi profil gagal disimpan. Silakan hubungi admin.",
+            variant: "destructive",
+          });
         }
       }
 

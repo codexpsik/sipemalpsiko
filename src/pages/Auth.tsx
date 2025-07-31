@@ -35,9 +35,12 @@ export default function Auth() {
 
   // Redirect authenticated users to their role-specific dashboard
   useEffect(() => {
+    console.log('Auth useEffect - user:', !!user, 'profile:', profile?.role);
+    
     if (user) {
       if (profile?.role) {
         // User has a profile, redirect to role-specific dashboard
+        console.log('Redirecting to dashboard for role:', profile.role);
         switch (profile.role) {
           case 'admin':
             navigate('/admin');
@@ -53,8 +56,9 @@ export default function Auth() {
         }
       } else if (profile === null) {
         // Profile is explicitly null (user exists but no profile)
-        // Stay on auth page to complete registration or show error
-        console.log('User logged in but no profile found');
+        console.log('User logged in but no profile found - refreshing to load profile');
+        // Try to refresh profile one more time
+        window.location.reload();
       }
       // If profile is undefined, still loading, so wait
     }
