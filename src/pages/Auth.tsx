@@ -35,52 +35,40 @@ export default function Auth() {
 
   // Redirect authenticated users to their role-specific dashboard
   useEffect(() => {
-    if (user && profile?.role) {
-      switch (profile.role) {
-        case 'admin':
-          navigate('/admin');
-          break;
-        case 'dosen':
-          navigate('/dosen');
-          break;
-        case 'mahasiswa':
-          navigate('/mahasiswa');
-          break;
-        default:
-          navigate('/');
+    if (user) {
+      if (profile?.role) {
+        // User has a profile, redirect to role-specific dashboard
+        switch (profile.role) {
+          case 'admin':
+            navigate('/admin');
+            break;
+          case 'dosen':
+            navigate('/dosen');
+            break;
+          case 'mahasiswa':
+            navigate('/mahasiswa');
+            break;
+          default:
+            navigate('/');
+        }
+      } else if (profile === null) {
+        // Profile is explicitly null (user exists but no profile)
+        // Stay on auth page to complete registration or show error
+        console.log('User logged in but no profile found');
       }
+      // If profile is undefined, still loading, so wait
     }
   }, [user, profile, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    
     const { error } = await signIn(loginData.email, loginData.password);
     
     if (!error) {
-      // Wait for profile to be loaded, then redirect based on role
-      const checkProfileAndRedirect = () => {
-        if (profile?.role) {
-          switch (profile.role) {
-            case 'admin':
-              navigate('/admin');
-              break;
-            case 'dosen':
-              navigate('/dosen');
-              break;
-            case 'mahasiswa':
-              navigate('/mahasiswa');
-              break;
-            default:
-              navigate('/');
-          }
-        } else {
-          // If profile not loaded yet, check again after a short delay
-          setTimeout(checkProfileAndRedirect, 500);
-        }
-      };
-      checkProfileAndRedirect();
+      // Success message will be shown by useAuth, just wait for redirect
+      // The useEffect will handle the redirect when user and profile are loaded
     }
     
     setIsLoading(false);
