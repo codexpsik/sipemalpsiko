@@ -93,7 +93,7 @@ export default function Landing() {
               <Button 
                 variant="outline" 
                 size="xl"
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/katalog')}
                 className="gap-3"
               >
                 <TestTube className="h-5 w-5" />
@@ -143,7 +143,7 @@ export default function Landing() {
                   <Button 
                     variant="outline" 
                     className="w-full mt-6 gap-2"
-                    onClick={() => navigate('/auth')}
+                    onClick={() => navigate('/katalog')}
                   >
                     Lihat Semua
                     <ArrowRight className="h-4 w-4" />

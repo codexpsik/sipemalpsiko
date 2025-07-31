@@ -66,6 +66,10 @@ export function Navbar() {
               Beranda
             </Link>
             
+            <Link to="/katalog" className="text-foreground hover:text-primary transition-colors">
+              Katalog Alat
+            </Link>
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2">
@@ -159,6 +163,14 @@ export function Navbar() {
               onClick={() => setIsOpen(false)}
             >
               Beranda
+            </Link>
+            
+            <Link 
+              to="/katalog" 
+              className="block px-3 py-2 text-foreground hover:text-primary transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Katalog Alat
             </Link>
             
             <Button 
