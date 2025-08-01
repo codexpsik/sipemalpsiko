@@ -24,6 +24,7 @@ import MahasiswaDashboard from "./pages/mahasiswa/MahasiswaDashboard";
 import PeminjamanPage from "./pages/PeminjamanPage";
 import PengembalianPage from "./pages/PengembalianPage";
 import ProfilePage from "./pages/ProfilePage";
+import HistoryPage from "./pages/HistoryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,12 @@ const App = () => (
             <Route path="/profile" element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/history" element={
+              <ProtectedRoute>
+                <HistoryPage />
               </ProtectedRoute>
             } />
             
