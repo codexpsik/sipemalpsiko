@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -53,6 +55,9 @@ interface BorrowRequest {
   purpose: string;
   status: 'pending' | 'approved' | 'rejected' | 'active' | 'returned';
   adminNotes?: string;
+  user_id: string;
+  equipment_id: string;
+  approved_by?: string;
 }
 
 export default function ManageBorrowing() {
@@ -62,83 +67,76 @@ export default function ManageBorrowing() {
   const [selectedRequest, setSelectedRequest] = useState<BorrowRequest | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
+  const [borrowRequests, setBorrowRequests] = useState<BorrowRequest[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Demo data
-  const [borrowRequests, setBorrowRequests] = useState<BorrowRequest[]>([
-    {
-      id: "1",
-      userName: "Dr. Sarah Wilson",
-      userRole: "dosen",
-      userNim: "DOC001",
-      toolName: "MMPI-2 (Minnesota Multiphasic Personality Inventory)",
-      category: "Harus Dikembalikan",
-      quantity: 1,
-      requestDate: "2024-01-15",
-      startDate: "2024-01-20",
-      endDate: "2024-01-27",
-      purpose: "Penelitian kepribadian mahasiswa untuk thesis",
-      status: "pending"
-    },
-    {
-      id: "2",
-      userName: "Ahmad Rizki",
-      userRole: "mahasiswa",
-      userNim: "2021001",
-      toolName: "Beck Depression Inventory (BDI-II)",
-      category: "Habis Pakai",
-      quantity: 5,
-      requestDate: "2024-01-14",
-      startDate: "2024-01-16",
-      endDate: "2024-01-16",
-      purpose: "Tugas akhir tentang tingkat depresi mahasiswa",
-      status: "approved"
-    },
-    {
-      id: "3",
-      userName: "Prof. Michael Lee",
-      userRole: "dosen",
-      userNim: "DOC002",
-      toolName: "TAT (Thematic Apperception Test)",
-      category: "Copy 1",
-      quantity: 1,
-      requestDate: "2024-01-13",
-      startDate: "2024-01-18",
-      endDate: "2024-01-21",
-      purpose: "Asesmen klinis untuk pasien",
-      status: "active"
-    },
-    {
-      id: "4",
-      userName: "Siti Nurhaliza",
-      userRole: "mahasiswa",
-      userNim: "2021002",
-      toolName: "WAIS-IV (Wechsler Adult Intelligence Scale)",
-      category: "Harus Dikembalikan",
-      quantity: 1,
-      requestDate: "2024-01-12",
-      startDate: "2024-01-15",
-      endDate: "2024-01-22",
-      purpose: "Penelitian skripsi tentang intelegensi",
-      status: "returned"
-    },
-    {
-      id: "5",
-      userName: "Budi Santoso",
-      userRole: "mahasiswa",
-      userNim: "2020055",
-      toolName: "Rorschach Inkblot Test",
-      category: "Copy 1",
-      quantity: 1,
-      requestDate: "2024-01-10",
-      startDate: "2024-01-25",
-      endDate: "2024-01-28",
-      purpose: "Praktikum asesmen proyektif",
-      status: "rejected",
-      adminNotes: "Alat sedang dipinjam untuk periode yang diminta"
+  useEffect(() => {
+    fetchBorrowingRequests();
+    fetchCategories();
+  }, []);
+
+  const fetchBorrowingRequests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('borrowings')
+        .select(`
+          *,
+          profiles(nama, role, nim),
+          equipment(nama, categories(nama))
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedData: BorrowRequest[] = data?.map(borrowing => ({
+        id: borrowing.id,
+        userName: borrowing.profiles?.nama || 'Unknown',
+        userRole: borrowing.profiles?.role || 'mahasiswa',
+        userNim: borrowing.profiles?.nim || 'N/A',
+        toolName: borrowing.equipment?.nama || 'Unknown Equipment',
+        category: borrowing.equipment?.categories?.nama || 'Unknown Category',
+        quantity: borrowing.jumlah,
+        requestDate: borrowing.created_at,
+        startDate: borrowing.tanggal_pinjam,
+        endDate: borrowing.tanggal_kembali,
+        purpose: borrowing.catatan || '',
+        status: borrowing.status,
+        adminNotes: '',
+        user_id: borrowing.user_id,
+        equipment_id: borrowing.equipment_id,
+        approved_by: borrowing.approved_by
+      })) || [];
+
+      setBorrowRequests(formattedData);
+    } catch (error) {
+      console.error('Error fetching borrowing requests:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch borrowing requests",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  const categories = ["Harus Dikembalikan", "Habis Pakai", "Copy 1"];
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('nama')
+        .order('nama');
+
+      if (error) throw error;
+
+      const categoryNames = data?.map(cat => cat.nama) || [];
+      setCategories(categoryNames);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   const filteredRequests = borrowRequests.filter(request => {
     const matchesSearch = request.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -150,31 +148,83 @@ export default function ManageBorrowing() {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const handleApprove = (requestId: string) => {
-    setBorrowRequests(requests =>
-      requests.map(request =>
-        request.id === requestId
-          ? { ...request, status: "approved" as const, adminNotes }
-          : request
-      )
-    );
+  const handleApprove = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('borrowings')
+        .update({ 
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      setBorrowRequests(requests =>
+        requests.map(request =>
+          request.id === requestId
+            ? { ...request, status: "approved" as const, adminNotes }
+            : request
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: "Borrowing request approved successfully",
+      });
+    } catch (error) {
+      console.error('Error approving request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve request",
+        variant: "destructive",
+      });
+    }
     setAdminNotes("");
     setIsDetailDialogOpen(false);
   };
 
-  const handleReject = (requestId: string) => {
+  const handleReject = async (requestId: string) => {
     if (!adminNotes.trim()) {
-      alert("Mohon berikan alasan penolakan!");
+      toast({
+        title: "Error",
+        description: "Mohon berikan alasan penolakan!",
+        variant: "destructive",
+      });
       return;
     }
 
-    setBorrowRequests(requests =>
-      requests.map(request =>
-        request.id === requestId
-          ? { ...request, status: "rejected" as const, adminNotes }
-          : request
-      )
-    );
+    try {
+      const { error } = await supabase
+        .from('borrowings')
+        .update({ 
+          status: 'rejected'
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      setBorrowRequests(requests =>
+        requests.map(request =>
+          request.id === requestId
+            ? { ...request, status: "rejected" as const, adminNotes }
+            : request
+        )
+      );
+
+      toast({
+        title: "Success", 
+        description: "Borrowing request rejected",
+      });
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject request",
+        variant: "destructive",
+      });
+    }
     setAdminNotes("");
     setIsDetailDialogOpen(false);
   };

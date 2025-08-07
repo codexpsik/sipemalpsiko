@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -50,9 +52,9 @@ interface ReturnRequest {
   borrowDate: string;
   dueDate: string;
   returnRequestDate: string;
-  stage: 'tahap_awal' | 'tahap_akhir' | 'completed';
-  status: 'pending' | 'approved_stage1' | 'approved_final' | 'rejected';
-  condition: 'baik' | 'rusak' | 'hilang';
+  stage: 'initial' | 'final' | 'completed';
+  status: 'initial' | 'final' | 'completed';
+  condition: string;
   userNotes?: string;
   adminNotes?: string;
   penalty?: number;
@@ -65,83 +67,62 @@ export default function ManageReturning() {
   const [selectedReturn, setSelectedReturn] = useState<ReturnRequest | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
+  const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Demo data
-  const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([
-    {
-      id: "1",
-      borrowId: "B001",
-      userName: "Dr. Sarah Wilson",
-      userRole: "dosen",
-      userNim: "DOC001",
-      toolName: "MMPI-2 (Minnesota Multiphasic Personality Inventory)",
-      category: "Harus Dikembalikan",
-      quantity: 1,
-      borrowDate: "2024-01-15",
-      dueDate: "2024-01-22",
-      returnRequestDate: "2024-01-21",
-      stage: "tahap_awal",
-      status: "pending",
-      condition: "baik",
-      userNotes: "Alat dalam kondisi baik, sudah selesai digunakan untuk penelitian"
-    },
-    {
-      id: "2",
-      borrowId: "B002",
-      userName: "Ahmad Rizki",
-      userRole: "mahasiswa",
-      userNim: "2021001",
-      toolName: "WAIS-IV (Wechsler Adult Intelligence Scale)",
-      category: "Harus Dikembalikan",
-      quantity: 1,
-      borrowDate: "2024-01-10",
-      dueDate: "2024-01-17",
-      returnRequestDate: "2024-01-18",
-      stage: "tahap_akhir",
-      status: "approved_stage1",
-      condition: "baik",
-      userNotes: "Penelitian telah selesai, alat siap dikembalikan",
-      adminNotes: "Tahap awal approved, menunggu konfirmasi fisik",
-      penalty: 5000
-    },
-    {
-      id: "3",
-      borrowId: "B003",
-      userName: "Prof. Michael Lee",
-      userRole: "dosen",
-      userNim: "DOC002",
-      toolName: "TAT (Thematic Apperception Test)",
-      category: "Copy 1",
-      quantity: 1,
-      borrowDate: "2024-01-08",
-      dueDate: "2024-01-15",
-      returnRequestDate: "2024-01-14",
-      stage: "completed",
-      status: "approved_final",
-      condition: "baik",
-      userNotes: "Asesmen klinis telah selesai",
-      adminNotes: "Alat dikembalikan dalam kondisi baik, proses selesai"
-    },
-    {
-      id: "4",
-      borrowId: "B004",
-      userName: "Siti Nurhaliza",
-      userRole: "mahasiswa",
-      userNim: "2021002",
-      toolName: "Beck Depression Inventory (BDI-II)",
-      category: "Harus Dikembalikan",
-      quantity: 1,
-      borrowDate: "2024-01-05",
-      dueDate: "2024-01-12",
-      returnRequestDate: "2024-01-16",
-      stage: "tahap_awal",
-      status: "rejected",
-      condition: "rusak",
-      userNotes: "Beberapa halaman robek, mohon maaf atas kerusakan",
-      adminNotes: "Alat mengalami kerusakan, dikenakan denda",
-      penalty: 50000
+  useEffect(() => {
+    fetchReturnRequests();
+  }, []);
+
+  const fetchReturnRequests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('returns')
+        .select(`
+          *,
+          borrowings(
+            *,
+            profiles(nama, role, nim),
+            equipment(nama, categories(nama))
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedData: ReturnRequest[] = data?.map(returnReq => ({
+        id: returnReq.id,
+        borrowId: returnReq.borrowing_id,
+        userName: returnReq.borrowings?.profiles?.nama || 'Unknown',
+        userRole: returnReq.borrowings?.profiles?.role || 'mahasiswa',
+        userNim: returnReq.borrowings?.profiles?.nim || 'N/A',
+        toolName: returnReq.borrowings?.equipment?.nama || 'Unknown Equipment',
+        category: returnReq.borrowings?.equipment?.categories?.nama || 'Unknown Category',
+        quantity: returnReq.borrowings?.jumlah || 1,
+        borrowDate: returnReq.borrowings?.tanggal_pinjam || '',
+        dueDate: returnReq.borrowings?.tanggal_kembali || '',
+        returnRequestDate: returnReq.created_at,
+        stage: returnReq.status === 'initial' ? 'initial' : returnReq.status === 'final' ? 'final' : 'completed',
+        status: returnReq.status,
+        condition: returnReq.kondisi_alat || 'baik',
+        userNotes: returnReq.catatan_tahap_awal || '',
+        adminNotes: returnReq.catatan_tahap_akhir || '',
+        penalty: 0
+      })) || [];
+
+      setReturnRequests(formattedData);
+    } catch (error) {
+      console.error('Error fetching return requests:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch return requests",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const filteredReturns = returnRequests.filter(request => {
     const matchesSearch = request.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -153,67 +134,145 @@ export default function ManageReturning() {
     return matchesSearch && matchesStatus && matchesStage;
   });
 
-  const handleApproveStage1 = (returnId: string) => {
-    setReturnRequests(requests =>
-      requests.map(request =>
-        request.id === returnId
-          ? { 
-              ...request, 
-              status: "approved_stage1" as const, 
-              stage: "tahap_akhir" as const,
-              adminNotes 
-            }
-          : request
-      )
-    );
+  const handleApproveStage1 = async (returnId: string) => {
+    try {
+      const { error } = await supabase
+        .from('returns')
+        .update({ 
+          status: 'final',
+          catatan_tahap_akhir: adminNotes,
+          processed_at: new Date().toISOString(),
+          processed_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', returnId);
+
+      if (error) throw error;
+
+      setReturnRequests(requests =>
+        requests.map(request =>
+          request.id === returnId
+            ? { 
+                ...request, 
+                status: "final" as const, 
+                stage: "final" as const,
+                adminNotes 
+              }
+            : request
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: "Stage 1 approved successfully",
+      });
+    } catch (error) {
+      console.error('Error approving stage 1:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve stage 1",
+        variant: "destructive",
+      });
+    }
     setAdminNotes("");
     setIsDetailDialogOpen(false);
   };
 
-  const handleApproveFinal = (returnId: string) => {
-    setReturnRequests(requests =>
-      requests.map(request =>
-        request.id === returnId
-          ? { 
-              ...request, 
-              status: "approved_final" as const, 
-              stage: "completed" as const,
-              adminNotes 
-            }
-          : request
-      )
-    );
+  const handleApproveFinal = async (returnId: string) => {
+    try {
+      const { error } = await supabase
+        .from('returns')
+        .update({ 
+          status: 'completed',
+          catatan_tahap_akhir: adminNotes,
+          processed_at: new Date().toISOString(),
+          processed_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', returnId);
+
+      if (error) throw error;
+
+      setReturnRequests(requests =>
+        requests.map(request =>
+          request.id === returnId
+            ? { 
+                ...request, 
+                status: "completed" as const, 
+                stage: "completed" as const,
+                adminNotes 
+              }
+            : request
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: "Return completed successfully",
+      });
+    } catch (error) {
+      console.error('Error completing return:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete return",
+        variant: "destructive",
+      });
+    }
     setAdminNotes("");
     setIsDetailDialogOpen(false);
   };
 
-  const handleReject = (returnId: string) => {
+  const handleReject = async (returnId: string) => {
     if (!adminNotes.trim()) {
-      alert("Mohon berikan alasan penolakan!");
+      toast({
+        title: "Error",
+        description: "Mohon berikan alasan penolakan!",
+        variant: "destructive",
+      });
       return;
     }
 
-    setReturnRequests(requests =>
-      requests.map(request =>
-        request.id === returnId
-          ? { ...request, status: "rejected" as const, adminNotes }
-          : request
-      )
-    );
+    try {
+      const { error } = await supabase
+        .from('returns')
+        .update({ 
+          status: 'initial',
+          catatan_tahap_akhir: adminNotes
+        })
+        .eq('id', returnId);
+
+      if (error) throw error;
+
+      setReturnRequests(requests =>
+        requests.map(request =>
+          request.id === returnId
+            ? { ...request, status: "initial" as const, adminNotes }
+            : request
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: "Return request rejected",
+      });
+    } catch (error) {
+      console.error('Error rejecting return:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject return",
+        variant: "destructive",
+      });
+    }
     setAdminNotes("");
     setIsDetailDialogOpen(false);
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending":
+      case "initial":
         return <Badge variant="outline" className="text-yellow-600 border-yellow-300">Menunggu</Badge>;
-      case "approved_stage1":
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Tahap 1 OK</Badge>;
-      case "approved_final":
+      case "final":
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Tahap Final</Badge>;
+      case "completed":
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Selesai</Badge>;
-      case "rejected":
-        return <Badge variant="destructive">Ditolak</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
@@ -221,9 +280,9 @@ export default function ManageReturning() {
 
   const getStageBadge = (stage: string) => {
     switch (stage) {
-      case "tahap_awal":
+      case "initial":
         return <Badge variant="outline" className="text-blue-600 border-blue-300">Tahap Awal</Badge>;
-      case "tahap_akhir":
+      case "final":
         return <Badge variant="outline" className="text-orange-600 border-orange-300">Tahap Akhir</Badge>;
       case "completed":
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Selesai</Badge>;
@@ -309,10 +368,9 @@ export default function ManageReturning() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="pending">Menunggu</SelectItem>
-                <SelectItem value="approved_stage1">Tahap 1 OK</SelectItem>
-                <SelectItem value="approved_final">Selesai</SelectItem>
-                <SelectItem value="rejected">Ditolak</SelectItem>
+                <SelectItem value="initial">Menunggu</SelectItem>
+                <SelectItem value="final">Tahap Final</SelectItem>
+                <SelectItem value="completed">Selesai</SelectItem>
               </SelectContent>
             </Select>
             
@@ -322,8 +380,8 @@ export default function ManageReturning() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Tahap</SelectItem>
-                <SelectItem value="tahap_awal">Tahap Awal</SelectItem>
-                <SelectItem value="tahap_akhir">Tahap Akhir</SelectItem>
+                <SelectItem value="initial">Tahap Awal</SelectItem>
+                <SelectItem value="final">Tahap Akhir</SelectItem>
                 <SelectItem value="completed">Selesai</SelectItem>
               </SelectContent>
             </Select>
@@ -338,7 +396,7 @@ export default function ManageReturning() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Tahap Awal</p>
-                <p className="text-2xl font-bold">{returnRequests.filter(r => r.stage === 'tahap_awal').length}</p>
+                <p className="text-2xl font-bold">{returnRequests.filter(r => r.stage === 'initial').length}</p>
               </div>
               <Clock className="h-8 w-8 text-blue-600" />
             </div>
@@ -350,7 +408,7 @@ export default function ManageReturning() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Tahap Akhir</p>
-                <p className="text-2xl font-bold">{returnRequests.filter(r => r.stage === 'tahap_akhir').length}</p>
+                <p className="text-2xl font-bold">{returnRequests.filter(r => r.stage === 'final').length}</p>
               </div>
               <AlertTriangle className="h-8 w-8 text-orange-600" />
             </div>
@@ -455,7 +513,7 @@ export default function ManageReturning() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         
-                        {request.status === 'pending' && request.stage === 'tahap_awal' && (
+                        {request.status === 'initial' && request.stage === 'initial' && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -470,7 +528,7 @@ export default function ManageReturning() {
                           </Button>
                         )}
                         
-                        {request.status === 'approved_stage1' && request.stage === 'tahap_akhir' && (
+                        {request.status === 'final' && request.stage === 'final' && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -583,7 +641,7 @@ export default function ManageReturning() {
                 </div>
               )}
               
-              {(selectedReturn.status === 'pending' || selectedReturn.status === 'approved_stage1') && (
+              {(selectedReturn.status === 'initial' || selectedReturn.status === 'final') && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Catatan Admin</label>
                   <Textarea
@@ -610,7 +668,7 @@ export default function ManageReturning() {
                 Tutup
               </Button>
               
-              {selectedReturn.status === 'pending' && selectedReturn.stage === 'tahap_awal' && (
+              {selectedReturn.status === 'initial' && selectedReturn.stage === 'initial' && (
                 <div className="flex gap-2">
                   <Button
                     variant="destructive"
@@ -626,7 +684,7 @@ export default function ManageReturning() {
                 </div>
               )}
               
-              {selectedReturn.status === 'approved_stage1' && selectedReturn.stage === 'tahap_akhir' && (
+              {selectedReturn.status === 'final' && selectedReturn.stage === 'final' && (
                 <Button
                   onClick={() => handleApproveFinal(selectedReturn.id)}
                 >
