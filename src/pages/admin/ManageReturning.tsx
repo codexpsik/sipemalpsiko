@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeData } from "@/hooks/useRealtimeData";
 import {
   Table,
   TableBody,
@@ -74,6 +75,20 @@ export default function ManageReturning() {
   useEffect(() => {
     fetchReturnRequests();
   }, []);
+
+  // Real-time updates for returns
+  useRealtimeData({
+    table: 'returns',
+    onInsert: () => {
+      fetchReturnRequests(); // Refresh data when new return is added
+    },
+    onUpdate: () => {
+      fetchReturnRequests(); // Refresh data when return is updated
+    },
+    onDelete: () => {
+      fetchReturnRequests(); // Refresh data when return is deleted
+    }
+  });
 
   const fetchReturnRequests = async () => {
     try {

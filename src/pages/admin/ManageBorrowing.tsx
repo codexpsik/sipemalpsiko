@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeData } from "@/hooks/useRealtimeData";
 import {
   Table,
   TableBody,
@@ -76,6 +77,20 @@ export default function ManageBorrowing() {
     fetchBorrowingRequests();
     fetchCategories();
   }, []);
+
+  // Real-time updates for borrowings
+  useRealtimeData({
+    table: 'borrowings',
+    onInsert: () => {
+      fetchBorrowingRequests(); // Refresh data when new borrowing is added
+    },
+    onUpdate: () => {
+      fetchBorrowingRequests(); // Refresh data when borrowing is updated
+    },
+    onDelete: () => {
+      fetchBorrowingRequests(); // Refresh data when borrowing is deleted
+    }
+  });
 
   const fetchBorrowingRequests = async () => {
     try {
