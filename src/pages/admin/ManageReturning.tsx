@@ -77,39 +77,57 @@ export default function ManageReturning() {
 
   const fetchReturnRequests = async () => {
     try {
-      const { data, error } = await supabase
+      // First get returns with borrowings and equipment info
+      const { data: returnsData, error: returnsError } = await supabase
         .from('returns')
         .select(`
           *,
           borrowings(
             *,
-            profiles(nama, role, nim),
             equipment(nama, categories(nama))
           )
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (returnsError) throw returnsError;
 
-      const formattedData: ReturnRequest[] = data?.map(returnReq => ({
-        id: returnReq.id,
-        borrowId: returnReq.borrowing_id,
-        userName: returnReq.borrowings?.profiles?.nama || 'Unknown',
-        userRole: returnReq.borrowings?.profiles?.role || 'mahasiswa',
-        userNim: returnReq.borrowings?.profiles?.nim || 'N/A',
-        toolName: returnReq.borrowings?.equipment?.nama || 'Unknown Equipment',
-        category: returnReq.borrowings?.equipment?.categories?.nama || 'Unknown Category',
-        quantity: returnReq.borrowings?.jumlah || 1,
-        borrowDate: returnReq.borrowings?.tanggal_pinjam || '',
-        dueDate: returnReq.borrowings?.tanggal_kembali || '',
-        returnRequestDate: returnReq.created_at,
-        stage: returnReq.status === 'initial' ? 'initial' : returnReq.status === 'final' ? 'final' : 'completed',
-        status: returnReq.status,
-        condition: returnReq.kondisi_alat || 'baik',
-        userNotes: returnReq.catatan_tahap_awal || '',
-        adminNotes: returnReq.catatan_tahap_akhir || '',
-        penalty: 0
-      })) || [];
+      // Then get profiles for each user
+      const userIds = returnsData?.map(r => r.borrowings?.user_id).filter(Boolean) || [];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, nama, role, nim')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user_id to profile
+      const profilesMap = new Map();
+      profilesData?.forEach(profile => {
+        profilesMap.set(profile.user_id, profile);
+      });
+
+      const formattedData: ReturnRequest[] = returnsData?.map(returnReq => {
+        const profile = profilesMap.get(returnReq.borrowings?.user_id);
+        return {
+          id: returnReq.id,
+          borrowId: returnReq.borrowing_id,
+          userName: profile?.nama || 'Unknown',
+          userRole: profile?.role || 'mahasiswa',
+          userNim: profile?.nim || 'N/A',
+          toolName: returnReq.borrowings?.equipment?.nama || 'Unknown Equipment',
+          category: returnReq.borrowings?.equipment?.categories?.nama || 'Unknown Category',
+          quantity: returnReq.borrowings?.jumlah || 1,
+          borrowDate: returnReq.borrowings?.tanggal_pinjam || '',
+          dueDate: returnReq.borrowings?.tanggal_kembali || '',
+          returnRequestDate: returnReq.created_at,
+          stage: returnReq.status === 'initial' ? 'initial' : returnReq.status === 'final' ? 'final' : 'completed',
+          status: returnReq.status,
+          condition: returnReq.kondisi_alat || 'baik',
+          userNotes: returnReq.catatan_tahap_awal || '',
+          adminNotes: returnReq.catatan_tahap_akhir || '',
+          penalty: 0
+        };
+      }) || [];
 
       setReturnRequests(formattedData);
     } catch (error) {

@@ -79,35 +79,53 @@ export default function ManageBorrowing() {
 
   const fetchBorrowingRequests = async () => {
     try {
-      const { data, error } = await supabase
+      // First get borrowings with equipment info
+      const { data: borrowingsData, error: borrowingsError } = await supabase
         .from('borrowings')
         .select(`
           *,
-          profiles(nama, role, nim),
           equipment(nama, categories(nama))
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (borrowingsError) throw borrowingsError;
 
-      const formattedData: BorrowRequest[] = data?.map(borrowing => ({
-        id: borrowing.id,
-        userName: borrowing.profiles?.nama || 'Unknown',
-        userRole: borrowing.profiles?.role || 'mahasiswa',
-        userNim: borrowing.profiles?.nim || 'N/A',
-        toolName: borrowing.equipment?.nama || 'Unknown Equipment',
-        category: borrowing.equipment?.categories?.nama || 'Unknown Category',
-        quantity: borrowing.jumlah,
-        requestDate: borrowing.created_at,
-        startDate: borrowing.tanggal_pinjam,
-        endDate: borrowing.tanggal_kembali,
-        purpose: borrowing.catatan || '',
-        status: borrowing.status,
-        adminNotes: '',
-        user_id: borrowing.user_id,
-        equipment_id: borrowing.equipment_id,
-        approved_by: borrowing.approved_by
-      })) || [];
+      // Then get profiles for each user
+      const userIds = borrowingsData?.map(b => b.user_id).filter(Boolean) || [];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, nama, role, nim')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user_id to profile
+      const profilesMap = new Map();
+      profilesData?.forEach(profile => {
+        profilesMap.set(profile.user_id, profile);
+      });
+
+      const formattedData: BorrowRequest[] = borrowingsData?.map(borrowing => {
+        const profile = profilesMap.get(borrowing.user_id);
+        return {
+          id: borrowing.id,
+          userName: profile?.nama || 'Unknown',
+          userRole: profile?.role || 'mahasiswa',
+          userNim: profile?.nim || 'N/A',
+          toolName: borrowing.equipment?.nama || 'Unknown Equipment',
+          category: borrowing.equipment?.categories?.nama || 'Unknown Category',
+          quantity: borrowing.jumlah,
+          requestDate: borrowing.created_at,
+          startDate: borrowing.tanggal_pinjam,
+          endDate: borrowing.tanggal_kembali,
+          purpose: borrowing.catatan || '',
+          status: borrowing.status,
+          adminNotes: '',
+          user_id: borrowing.user_id,
+          equipment_id: borrowing.equipment_id,
+          approved_by: borrowing.approved_by
+        };
+      }) || [];
 
       setBorrowRequests(formattedData);
     } catch (error) {
