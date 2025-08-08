@@ -142,6 +142,7 @@ export type Database = {
           kategori_id: string
           kondisi: string | null
           nama: string
+          status: string | null
           stok: number
           updated_at: string
         }
@@ -153,6 +154,7 @@ export type Database = {
           kategori_id: string
           kondisi?: string | null
           nama: string
+          status?: string | null
           stok?: number
           updated_at?: string
         }
@@ -164,6 +166,7 @@ export type Database = {
           kategori_id?: string
           kondisi?: string | null
           nama?: string
+          status?: string | null
           stok?: number
           updated_at?: string
         }
@@ -395,7 +398,13 @@ export type Database = {
       }
     }
     Enums: {
-      borrowing_status: "pending" | "approved" | "returned" | "rejected"
+      borrowing_status:
+        | "pending"
+        | "approved"
+        | "returned"
+        | "rejected"
+        | "active"
+        | "overdue"
       equipment_category: "harus_dikembalikan" | "habis_pakai" | "copy_1"
       gender: "laki-laki" | "perempuan"
       return_status: "initial" | "final" | "completed"
@@ -527,7 +536,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      borrowing_status: ["pending", "approved", "returned", "rejected"],
+      borrowing_status: [
+        "pending",
+        "approved",
+        "returned",
+        "rejected",
+        "active",
+        "overdue",
+      ],
       equipment_category: ["harus_dikembalikan", "habis_pakai", "copy_1"],
       gender: ["laki-laki", "perempuan"],
       return_status: ["initial", "final", "completed"],

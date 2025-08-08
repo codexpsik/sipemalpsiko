@@ -183,10 +183,10 @@ export class PenaltyService {
         .from('penalties')
         .select(`
           *,
-          borrowings(
-            *,
+          borrowings!inner(
+            user_id,
             equipment(nama),
-            profiles(nama)
+            profiles!inner(nama)
           )
         `)
         .eq('borrowings.user_id', userId)
@@ -231,7 +231,7 @@ export class PenaltyService {
           *,
           equipment(nama, categories(nama))
         `)
-        .eq('status', 'active')
+        .eq('status', 'active' as any)
         .lt('tanggal_kembali', today);
 
       if (!overdueBorrowings) return;
@@ -265,7 +265,7 @@ export class PenaltyService {
         // Update borrowing status to overdue
         await supabase
           .from('borrowings')
-          .update({ status: 'overdue' })
+          .update({ status: 'overdue' as any })
           .eq('id', borrowing.id);
       }
 

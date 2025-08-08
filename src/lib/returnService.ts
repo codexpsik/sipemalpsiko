@@ -43,7 +43,7 @@ export class ReturnService {
       }
 
       // Check if borrowing is active
-      if (borrowing.status !== BORROWING_STATUS.ACTIVE && borrowing.status !== 'overdue') {
+      if (borrowing.status !== 'active' && borrowing.status !== 'overdue') {
         return {
           success: false,
           error: 'Borrowing is not active'
@@ -279,7 +279,7 @@ export class ReturnService {
           returns(id, status)
         `)
         .eq('user_id', userId)
-        .in('status', ['active', 'overdue'])
+        .in('status', ['active', 'overdue'] as any)
         .order('tanggal_kembali', { ascending: true });
 
       if (error) throw error;

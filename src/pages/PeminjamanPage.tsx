@@ -1,206 +1,204 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Navbar } from "@/components/Navbar";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { 
-  TestTube, 
-  Search, 
-  Filter,
-  Calendar as CalendarIcon,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  Star,
-  BookOpen,
-  Plus
-} from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { BorrowingService, type BorrowingRequest } from "@/lib/borrowingService";
+import { BUSINESS_RULES } from "@/lib/businessRules";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { CalendarIcon, ShoppingCart, Search, Filter, AlertTriangle } from "lucide-react";
 
-interface Tool {
+interface Equipment {
   id: string;
   nama: string;
   deskripsi: string;
-  kategori: string;
   stok: number;
-  stokAwal: number;
-  kondisi: 'baik' | 'rusak' | 'hilang';
-  lokasi: string;
-  tersedia: boolean;
-  queueLength?: number;
-  estimatedAvailable?: string;
+  gambar_url: string;
+  kondisi: string;
+  categories: {
+    nama: string;
+    tipe: string;
+  };
 }
 
 export default function PeminjamanPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Equipment catalog
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [filteredEquipment, setFilteredEquipment] = useState<Equipment[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
-  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [purpose, setPurpose] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  // Demo data
-  const tools: Tool[] = [
-    {
-      id: "1",
-      nama: "MMPI-2 (Minnesota Multiphasic Personality Inventory)",
-      deskripsi: "Tes kepribadian komprehensif untuk asesmen psikologis dewasa",
-      kategori: "Harus Dikembalikan",
-      stok: 3,
-      stokAwal: 5,
-      kondisi: "baik",
-      lokasi: "Rak A1",
-      tersedia: true
-    },
-    {
-      id: "2",
-      nama: "WAIS-IV (Wechsler Adult Intelligence Scale)",
-      deskripsi: "Tes intelegensi dewasa untuk mengukur kemampuan kognitif",
-      kategori: "Harus Dikembalikan",
-      stok: 2,
-      stokAwal: 3,
-      kondisi: "baik",
-      lokasi: "Rak A2",
-      tersedia: true
-    },
-    {
-      id: "3",
-      nama: "Beck Depression Inventory (BDI-II)",
-      deskripsi: "Kuesioner untuk mengukur tingkat depresi",
-      kategori: "Habis Pakai",
-      stok: 25,
-      stokAwal: 50,
-      kondisi: "baik",
-      lokasi: "Rak B1",
-      tersedia: true
-    },
-    {
-      id: "4",
-      nama: "TAT (Thematic Apperception Test)",
-      deskripsi: "Tes proyektif menggunakan gambar untuk asesmen kepribadian",
-      kategori: "Copy 1",
-      stok: 0,
-      stokAwal: 1,
-      kondisi: "baik",
-      lokasi: "Rak C1",
-      tersedia: false,
-      queueLength: 2,
-      estimatedAvailable: "2024-01-28"
-    },
-    {
-      id: "5",
-      nama: "Rorschach Inkblot Test",
-      deskripsi: "Tes proyektif menggunakan noda tinta",
-      kategori: "Copy 1",
-      stok: 1,
-      stokAwal: 1,
-      kondisi: "baik",
-      lokasi: "Rak C2",
-      tersedia: true
-    },
-    {
-      id: "6",
-      nama: "Form Observasi Kelas",
-      deskripsi: "Lembar observasi untuk penelitian di kelas",
-      kategori: "Habis Pakai",
-      stok: 100,
-      stokAwal: 100,
-      kondisi: "baik",
-      lokasi: "Rak B2",
-      tersedia: true
-    },
-    {
-      id: "7",
-      nama: "Stanford-Binet Intelligence Scales",
-      deskripsi: "Tes intelegensi individual untuk berbagai usia",
-      kategori: "Copy 1",
-      stok: 0,
-      stokAwal: 1,
-      kondisi: "baik",
-      lokasi: "Rak C3",
-      tersedia: false,
-      queueLength: 1,
-      estimatedAvailable: "2024-01-25"
-    }
-  ];
-
-  const categories = ["Harus Dikembalikan", "Habis Pakai", "Copy 1"];
-
-  const filteredTools = tools.filter(tool => {
-    const matchesSearch = tool.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         tool.deskripsi.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || tool.kategori === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
+  // Borrowing form
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    quantity: 1,
+    startDate: undefined as Date | undefined,
+    endDate: undefined as Date | undefined,
+    purpose: ""
   });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleBorrowRequest = () => {
-    if (!selectedTool || !startDate || !purpose.trim()) {
-      alert("Mohon lengkapi semua field yang diperlukan!");
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
       return;
     }
+    fetchEquipment();
+    fetchCategories();
+  }, [user, navigate]);
 
-    if (selectedTool.kategori === "Harus Dikembalikan" && !endDate) {
-      alert("Tanggal selesai wajib diisi untuk kategori Harus Dikembalikan!");
-      return;
+  useEffect(() => {
+    filterEquipment();
+  }, [equipment, searchQuery, categoryFilter]);
+
+  const fetchEquipment = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('equipment')
+        .select(`
+          *,
+          categories(nama, tipe)
+        `)
+        .gt('stok', 0) // Only show available equipment
+        .order('nama');
+
+      if (error) throw error;
+      setEquipment(data || []);
+    } catch (error) {
+      console.error('Error fetching equipment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load equipment catalog",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    // Demo submit
-    alert(`Permintaan peminjaman "${selectedTool.nama}" berhasil dikirim!\n\nDetail:\n- Tanggal mulai: ${format(startDate, "dd MMMM yyyy", { locale: id })}\n- Tanggal selesai: ${endDate ? format(endDate, "dd MMMM yyyy", { locale: id }) : "-"}\n- Tujuan: ${purpose}\n- Quantity: ${quantity}\n\nStatus: Menunggu persetujuan admin`);
-    
-    setIsRequestDialogOpen(false);
-    setSelectedTool(null);
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setPurpose("");
-    setQuantity(1);
   };
 
-  const handleQueueRequest = () => {
-    if (!selectedTool || !startDate || !endDate || !purpose.trim()) {
-      alert("Mohon lengkapi semua field untuk bergabung dalam antrian!");
-      return;
-    }
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('nama')
+        .order('nama');
 
-    alert(`Berhasil bergabung dalam antrian untuk "${selectedTool.nama}"!\n\nPosisi antrian: ${(selectedTool.queueLength || 0) + 1}\nTanggal yang diinginkan: ${format(startDate, "dd MMMM yyyy", { locale: id })} - ${format(endDate, "dd MMMM yyyy", { locale: id })}\n\nAnda akan dihubungi ketika alat tersedia.`);
-    
-    setIsRequestDialogOpen(false);
-    setSelectedTool(null);
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setPurpose("");
+      if (error) throw error;
+      setCategories(data?.map(cat => cat.nama) || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
   };
 
-  const getCategoryBadge = (kategori: string) => {
-    switch (kategori) {
+  const filterEquipment = () => {
+    let filtered = equipment;
+
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(item =>
+        item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.deskripsi?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(item => item.categories?.nama === categoryFilter);
+    }
+
+    setFilteredEquipment(filtered);
+  };
+
+  const calculateMaxEndDate = (equipment: Equipment, startDate: Date): Date => {
+    const categoryName = equipment.categories?.nama;
+    const maxDays = BUSINESS_RULES.MAX_BORROWING_DURATION[categoryName as keyof typeof BUSINESS_RULES.MAX_BORROWING_DURATION] || 14;
+    
+    const maxEndDate = new Date(startDate);
+    maxEndDate.setDate(maxEndDate.getDate() + maxDays);
+    return maxEndDate;
+  };
+
+  const handleBorrowRequest = (equipment: Equipment) => {
+    setSelectedEquipment(equipment);
+    setFormData({
+      quantity: 1,
+      startDate: undefined,
+      endDate: undefined,
+      purpose: ""
+    });
+    setIsFormOpen(true);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEquipment || !user || !formData.startDate || !formData.endDate) return;
+
+    setSubmitting(true);
+
+    try {
+      const request: BorrowingRequest = {
+        equipment_id: selectedEquipment.id,
+        user_id: user.id,
+        tanggal_pinjam: formData.startDate.toISOString().split('T')[0],
+        tanggal_kembali: formData.endDate.toISOString().split('T')[0],
+        jumlah: formData.quantity,
+        catatan: formData.purpose
+      };
+
+      const result = await BorrowingService.createBorrowingRequest(request);
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Borrowing request submitted successfully",
+        });
+        setIsFormOpen(false);
+        setSelectedEquipment(null);
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to submit borrowing request",
+          variant: "destructive",
+        });
+      }
+
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit borrowing request",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getAvailabilityBadge = (equipment: Equipment) => {
+    if (equipment.stok > 0) {
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Tersedia ({equipment.stok})</Badge>;
+    } else {
+      return <Badge variant="destructive">Tidak Tersedia</Badge>;
+    }
+  };
+
+  const getCategoryBadge = (categoryName: string) => {
+    switch (categoryName) {
       case "Harus Dikembalikan":
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Harus Dikembalikan</Badge>;
       case "Habis Pakai":
@@ -208,114 +206,47 @@ export default function PeminjamanPage() {
       case "Copy 1":
         return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Copy 1</Badge>;
       default:
-        return <Badge variant="secondary">{kategori}</Badge>;
+        return <Badge variant="secondary">{categoryName}</Badge>;
     }
   };
 
-  const getAvailabilityStatus = (tool: Tool) => {
-    if (tool.kategori === "Copy 1") {
-      if (tool.tersedia) {
-        return (
-          <div className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="h-4 w-4" />
-            <span className="text-sm font-medium">Tersedia</span>
-          </div>
-        );
-      } else {
-        return (
-          <div className="flex items-center gap-1 text-red-600">
-            <Clock className="h-4 w-4" />
-            <span className="text-sm font-medium">Sedang Dipinjam</span>
-          </div>
-        );
-      }
-    }
-
-    if (tool.stok === 0) {
-      return (
-        <div className="flex items-center gap-1 text-red-600">
-          <AlertTriangle className="h-4 w-4" />
-          <span className="text-sm font-medium">Stok Habis</span>
-        </div>
-      );
-    }
-
-    if (tool.stok <= 5 && tool.kategori !== "Copy 1") {
-      return (
-        <div className="flex items-center gap-1 text-yellow-600">
-          <AlertTriangle className="h-4 w-4" />
-          <span className="text-sm font-medium">Stok Terbatas</span>
-        </div>
-      );
-    }
-
+  if (loading) {
     return (
-      <div className="flex items-center gap-1 text-green-600">
-        <CheckCircle className="h-4 w-4" />
-        <span className="text-sm font-medium">Tersedia</span>
+      <div>
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-2 text-muted-foreground">Loading equipment...</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
-  };
-
-  const getActionButton = (tool: Tool) => {
-    if (tool.kategori === "Copy 1" && !tool.tersedia) {
-      return (
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => {
-            setSelectedTool(tool);
-            setIsRequestDialogOpen(true);
-          }}
-        >
-          <Clock className="h-4 w-4" />
-          Gabung Antrian
-        </Button>
-      );
-    }
-
-    if (tool.stok === 0) {
-      return (
-        <Button variant="outline" disabled className="w-full">
-          Tidak Tersedia
-        </Button>
-      );
-    }
-
-    return (
-      <Button
-        className="w-full gap-2"
-        onClick={() => {
-          setSelectedTool(tool);
-          setIsRequestDialogOpen(true);
-        }}
-      >
-        <Plus className="h-4 w-4" />
-        Pinjam Sekarang
-      </Button>
-    );
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div>
       <Navbar />
-      
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
-            <TestTube className="h-8 w-8" />
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <ShoppingCart className="h-8 w-8" />
             Peminjaman Alat Test
           </h1>
-          <p className="text-muted-foreground">Pilih alat test psikologi yang ingin Anda pinjam</p>
+          <p className="text-muted-foreground mt-1">
+            Pilih alat test yang ingin dipinjam dan ajukan permintaan peminjaman
+          </p>
         </div>
 
-        {/* Search & Filters */}
-        <Card className="mb-8 shadow-card border-0">
+        {/* Filters & Search */}
+        <Card className="shadow-card border-0 mb-6">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Filter className="h-5 w-5" />
-              Pencarian & Filter
+              Filter & Pencarian
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -324,7 +255,7 @@ export default function PeminjamanPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Cari alat test..."
+                    placeholder="Cari nama alat atau deskripsi..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -334,7 +265,7 @@ export default function PeminjamanPage() {
               
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih Kategori" />
+                  <SelectValue placeholder="Filter Kategori" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua Kategori</SelectItem>
@@ -347,197 +278,189 @@ export default function PeminjamanPage() {
           </CardContent>
         </Card>
 
-        {/* Tools Grid */}
+        {/* Equipment Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTools.map((tool) => (
-            <Card key={tool.id} className="shadow-card border-0 hover:shadow-hover transition-all duration-300">
+          {filteredEquipment.map((item) => (
+            <Card key={item.id} className="shadow-card border-0 hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1">
-                    {getCategoryBadge(tool.kategori)}
-                    <CardTitle className="text-lg mt-2 line-clamp-2">{tool.nama}</CardTitle>
-                  </div>
-                  {tool.kategori === "Copy 1" && (
-                    <Star className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                  )}
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">{item.nama}</CardTitle>
+                  {getAvailabilityBadge(item)}
                 </div>
-                <CardDescription className="line-clamp-3">
-                  {tool.deskripsi}
-                </CardDescription>
+                <CardDescription className="text-sm">{item.deskripsi}</CardDescription>
               </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">Status:</div>
-                    {getAvailabilityStatus(tool)}
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Kategori:</span>
+                    {getCategoryBadge(item.categories?.nama || 'Unknown')}
                   </div>
-                  <div className="text-right space-y-1">
-                    <div className="text-sm font-medium">Stok:</div>
-                    <div className="text-lg font-bold">
-                      {tool.kategori === "Copy 1" ? (tool.tersedia ? "1" : "0") : tool.stok}
-                      {tool.kategori !== "Copy 1" && (
-                        <span className="text-sm text-muted-foreground">/{tool.stokAwal}</span>
-                      )}
-                    </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Kondisi:</span>
+                    <Badge variant="outline">{item.kondisi || 'Baik'}</Badge>
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Max Duration:</span>
+                    <span className="text-sm font-medium">
+                      {BUSINESS_RULES.MAX_BORROWING_DURATION[item.categories?.nama as keyof typeof BUSINESS_RULES.MAX_BORROWING_DURATION] || 14} hari
+                    </span>
+                  </div>
+
+                  <Button 
+                    onClick={() => handleBorrowRequest(item)}
+                    disabled={item.stok === 0}
+                    className="w-full"
+                  >
+                    {item.stok > 0 ? 'Ajukan Peminjaman' : 'Tidak Tersedia'}
+                  </Button>
                 </div>
-
-                {tool.kategori === "Copy 1" && !tool.tersedia && tool.queueLength && tool.queueLength > 0 && (
-                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-4 w-4 text-orange-600" />
-                      <span className="text-sm font-medium text-orange-800">Informasi Antrian</span>
-                    </div>
-                    <div className="text-xs text-orange-700 space-y-1">
-                      <div>Antrian saat ini: {tool.queueLength} orang</div>
-                      {tool.estimatedAvailable && (
-                        <div>Estimasi tersedia: {new Date(tool.estimatedAvailable).toLocaleDateString('id-ID')}</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div>📍 Lokasi: {tool.lokasi}</div>
-                  <div>✅ Kondisi: {tool.kondisi}</div>
-                </div>
-
-                {getActionButton(tool)}
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {filteredTools.length === 0 && (
+        {filteredEquipment.length === 0 && (
           <div className="text-center py-12">
-            <TestTube className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Tidak ada alat yang ditemukan</h3>
+            <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium">Tidak ada alat ditemukan</h3>
             <p className="text-muted-foreground">Coba ubah kata kunci pencarian atau filter kategori</p>
           </div>
         )}
 
-        {/* Request Dialog */}
-        {selectedTool && (
-          <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {selectedTool.kategori === "Copy 1" && !selectedTool.tersedia ? "Gabung Antrian" : "Request Peminjaman"}
-                </DialogTitle>
-                <DialogDescription>
-                  {selectedTool.nama} - {selectedTool.kategori}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <h4 className="font-medium mb-2">Informasi Alat:</h4>
-                  <div className="text-sm space-y-1">
-                    <div>📍 Lokasi: {selectedTool.lokasi}</div>
-                    <div>📊 Stok: {selectedTool.kategori === "Copy 1" ? (selectedTool.tersedia ? "1 (Tersedia)" : "0 (Sedang dipinjam)") : `${selectedTool.stok}/${selectedTool.stokAwal}`}</div>
-                    {selectedTool.kategori === "Copy 1" && !selectedTool.tersedia && (
-                      <div>⏳ Antrian: {selectedTool.queueLength} orang</div>
-                    )}
+        {/* Borrowing Form Modal */}
+        {isFormOpen && selectedEquipment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Ajukan Peminjaman</CardTitle>
+                <CardDescription>
+                  {selectedEquipment.nama}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="quantity">Jumlah</Label>
+                      <Input
+                        id="quantity"
+                        type="number"
+                        min="1"
+                        max={selectedEquipment.stok}
+                        value={formData.quantity}
+                        onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Kategori</Label>
+                      <div className="pt-2">
+                        {getCategoryBadge(selectedEquipment.categories?.nama || 'Unknown')}
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Tanggal Mulai *</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left font-normal">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? format(startDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={startDate}
-                          onSelect={setStartDate}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  
-                  {(selectedTool.kategori === "Harus Dikembalikan" || selectedTool.kategori === "Copy 1") && (
-                    <div className="space-y-2">
-                      <Label>Tanggal Selesai *</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Tanggal Mulai</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-start text-left font-normal">
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {endDate ? format(endDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal"}
+                            {formData.startDate ? format(formData.startDate, "PPP") : "Pilih tanggal"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
                           <Calendar
                             mode="single"
-                            selected={endDate}
-                            onSelect={setEndDate}
-                            disabled={(date) => !startDate || date <= startDate}
+                            selected={formData.startDate}
+                            onSelect={(date) => {
+                              setFormData(prev => ({ ...prev, startDate: date, endDate: undefined }));
+                            }}
+                            disabled={(date) => date < new Date()}
                             initialFocus
                           />
                         </PopoverContent>
                       </Popover>
                     </div>
-                  )}
-                </div>
 
-                {selectedTool.kategori !== "Copy 1" && (
-                  <div className="space-y-2">
-                    <Label>Jumlah</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max={selectedTool.stok}
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    <div>
+                      <Label>Tanggal Selesai</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start text-left font-normal"
+                            disabled={!formData.startDate}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.endDate ? format(formData.endDate, "PPP") : "Pilih tanggal"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={formData.endDate}
+                            onSelect={(date) => setFormData(prev => ({ ...prev, endDate: date }))}
+                            disabled={(date) => {
+                              if (!formData.startDate) return true;
+                              const maxEndDate = calculateMaxEndDate(selectedEquipment, formData.startDate);
+                              return date < formData.startDate || date > maxEndDate;
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="purpose">Tujuan Peminjaman</Label>
+                    <Textarea
+                      id="purpose"
+                      placeholder="Jelaskan tujuan penggunaan alat test..."
+                      value={formData.purpose}
+                      onChange={(e) => setFormData(prev => ({ ...prev, purpose: e.target.value }))}
+                      required
+                      rows={3}
                     />
                   </div>
-                )}
 
-                <div className="space-y-2">
-                  <Label>Tujuan Peminjaman *</Label>
-                  <Textarea
-                    value={purpose}
-                    onChange={(e) => setPurpose(e.target.value)}
-                    placeholder="Jelaskan tujuan dan kebutuhan peminjaman alat ini..."
-                    rows={3}
-                  />
-                </div>
+                  {formData.startDate && (
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <h4 className="font-medium text-blue-900">Informasi Peminjaman:</h4>
+                      <ul className="text-sm text-blue-800 mt-1 space-y-1">
+                        <li>• Maksimal durasi: {BUSINESS_RULES.MAX_BORROWING_DURATION[selectedEquipment.categories?.nama as keyof typeof BUSINESS_RULES.MAX_BORROWING_DURATION] || 14} hari</li>
+                        <li>• Denda keterlambatan: Rp {(BUSINESS_RULES.PENALTY_RATES[selectedEquipment.categories?.nama as keyof typeof BUSINESS_RULES.PENALTY_RATES] || 5000).toLocaleString()}/hari</li>
+                        <li>• Proses persetujuan: 1-2 hari kerja</li>
+                      </ul>
+                    </div>
+                  )}
 
-                {selectedTool.kategori === "Copy 1" && !selectedTool.tersedia && (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      <span className="font-medium text-yellow-800">Informasi Antrian</span>
-                    </div>
-                    <div className="text-sm text-yellow-700 space-y-1">
-                      <div>Alat sedang dipinjam oleh user lain</div>
-                      <div>Posisi Anda dalam antrian: #{(selectedTool.queueLength || 0) + 1}</div>
-                      <div>Anda akan dihubungi ketika alat tersedia</div>
-                    </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsFormOpen(false)}
+                      className="flex-1"
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={submitting || !formData.startDate || !formData.endDate || !formData.purpose.trim()}
+                      className="flex-1"
+                    >
+                      {submitting ? 'Mengajukan...' : 'Ajukan Peminjaman'}
+                    </Button>
                   </div>
-                )}
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsRequestDialogOpen(false)}>
-                  Batal
-                </Button>
-                <Button 
-                  onClick={selectedTool.kategori === "Copy 1" && !selectedTool.tersedia ? handleQueueRequest : handleBorrowRequest}
-                >
-                  {selectedTool.kategori === "Copy 1" && !selectedTool.tersedia ? "Gabung Antrian" : "Kirim Request"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

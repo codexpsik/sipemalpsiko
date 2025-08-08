@@ -54,7 +54,7 @@ interface BorrowRequest {
   startDate: string;
   endDate: string;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'returned';
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'returned' | 'overdue';
   adminNotes?: string;
   user_id: string;
   equipment_id: string;
