@@ -82,44 +82,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Error fetching profile:', error);
+        toast({
+          title: "Error",
+          description: "Gagal mengambil data profile pengguna",
+          variant: "destructive",
+        });
         return;
       }
 
       if (data) {
-        console.log('Profile found:', data.role);
+        console.log('Profile found:', data.role, 'for user:', data.nama);
         setProfile(data);
+        
+        // Show success message for login
+        toast({
+          title: "Login Berhasil",
+          description: `Selamat datang, ${data.nama}!`,
+        });
       } else {
         console.log('No profile found for user:', userId);
         setProfile(null);
+        toast({
+          title: "Warning",
+          description: "Profile tidak ditemukan. Silakan hubungi admin.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat mengambil data profile",
+        variant: "destructive",
+      });
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Attempting to sign in with email:', email);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Sign in error:', error);
         toast({
-          title: "Error",
-          description: error.message,
+          title: "Login Gagal",
+          description: error.message === 'Invalid login credentials' 
+            ? 'Email atau password salah' 
+            : error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Berhasil",
-          description: "Login berhasil!",
-        });
+        return { error };
+      }
+
+      if (data.user) {
+        console.log('Sign in successful for user:', data.user.id);
+        // Profile fetching and toast will be handled by the auth state change
+        return { error: null };
       }
 
       return { error };
     } catch (error) {
       console.error('Sign in error:', error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat login",
+        variant: "destructive",
+      });
       return { error };
     }
   };
