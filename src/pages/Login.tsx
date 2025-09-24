@@ -1,69 +1,46 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
-import { GraduationCap, LogIn, Eye, EyeOff, Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { GraduationCap, LogIn, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: ""
   });
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn, user, profile, loading } = useAuth();
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!loading && user && profile) {
-      switch (profile.role) {
-        case 'admin':
-          navigate('/admin');
-          break;
-        case 'dosen':
-          navigate('/dosen');
-          break;
-        case 'mahasiswa':
-          navigate('/mahasiswa');
-          break;
-        default:
-          navigate('/');
-      }
-    }
-  }, [user, profile, loading, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      const { error } = await signIn(formData.email, formData.password);
-      
-      if (!error) {
-        // Navigation will be handled by useEffect
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-    } finally {
-      setIsLoading(false);
+    // Demo login logic - in real app this would connect to backend
+    const { username, password } = formData;
+    
+    // Demo users for testing
+    if (username === "admin" && password === "admin123") {
+      localStorage.setItem('userRole', 'admin');
+      localStorage.setItem('userName', 'Administrator');
+      localStorage.setItem('isAuthenticated', 'true');
+      navigate('/admin');
+    } else if (username === "dosen" && password === "dosen123") {
+      localStorage.setItem('userRole', 'dosen');
+      localStorage.setItem('userName', 'Dr. John Doe');
+      localStorage.setItem('isAuthenticated', 'true');
+      navigate('/dosen');
+    } else if (username === "mahasiswa" && password === "mahasiswa123") {
+      localStorage.setItem('userRole', 'mahasiswa');
+      localStorage.setItem('userName', 'Jane Student');
+      localStorage.setItem('isAuthenticated', 'true');
+      navigate('/mahasiswa');
+    } else {
+      alert('Username atau password salah!\n\nDemo accounts:\n- admin/admin123 (Admin)\n- dosen/dosen123 (Dosen)\n- mahasiswa/mahasiswa123 (Mahasiswa)');
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,7 +58,7 @@ export default function Login() {
               <div>
                 <CardTitle className="text-2xl font-bold">Masuk ke SIPEMAL</CardTitle>
                 <CardDescription>
-                  Masukkan email dan password untuk mengakses akun Anda
+                  Masukkan username dan password untuk mengakses akun Anda
                 </CardDescription>
               </div>
             </CardHeader>
@@ -89,16 +66,15 @@ export default function Login() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="username">Username</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="Masukkan email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    id="username"
+                    type="text"
+                    placeholder="Masukkan username"
+                    value={formData.username}
+                    onChange={(e) => setFormData({...formData, username: e.target.value})}
                     required
                     className="h-11"
-                    disabled={isLoading}
                   />
                 </div>
                 
@@ -113,7 +89,6 @@ export default function Login() {
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
                       required
                       className="h-11 pr-10"
-                      disabled={isLoading}
                     />
                     <Button
                       type="button"
@@ -121,20 +96,15 @@ export default function Login() {
                       size="icon"
                       className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
                       onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoading}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full gap-2" size="lg" disabled={isLoading}>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <LogIn className="h-4 w-4" />
-                  )}
-                  {isLoading ? 'Memproses...' : 'Masuk'}
+                <Button type="submit" className="w-full gap-2" size="lg">
+                  <LogIn className="h-4 w-4" />
+                  Masuk
                 </Button>
               </form>
 
@@ -150,9 +120,9 @@ export default function Login() {
                 <div className="bg-muted/50 rounded-lg p-4 text-left">
                   <h4 className="font-semibold text-sm mb-2 text-center">Demo Accounts:</h4>
                   <div className="text-xs space-y-1 text-muted-foreground">
-                    <div>👨‍💼 <strong>Admin:</strong> admin@sipemal.com / admin123</div>
-                    <div>👨‍🏫 <strong>Dosen:</strong> dosen@sipemal.com / dosen123</div>
-                    <div>👨‍🎓 <strong>Mahasiswa:</strong> mahasiswa@sipemal.com / mahasiswa123</div>
+                    <div>👨‍💼 <strong>Admin:</strong> admin / admin123</div>
+                    <div>👨‍🏫 <strong>Dosen:</strong> dosen / dosen123</div>
+                    <div>👨‍🎓 <strong>Mahasiswa:</strong> mahasiswa / mahasiswa123</div>
                   </div>
                 </div>
               </div>

@@ -53,11 +53,6 @@ const menuItems = [
     url: "/admin/returning",
     icon: RotateCcw,
   },
-  {
-    title: "Log Aktivitas",
-    url: "/admin/audit-logs",
-    icon: Settings,
-  },
 ];
 
 export function AdminSidebar() {

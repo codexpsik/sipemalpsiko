@@ -73,25 +73,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
         return;
       }
 
-      if (data) {
-        console.log('Profile found:', data.role);
-        setProfile(data);
-      } else {
-        console.log('No profile found for user:', userId);
-        setProfile(null);
-      }
+      setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -161,11 +154,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
-          toast({
-            title: "Warning",
-            description: "Akun berhasil dibuat, tapi profil gagal disimpan. Silakan hubungi admin.",
-            variant: "destructive",
-          });
         }
       }
 

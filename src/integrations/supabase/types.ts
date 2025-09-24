@@ -14,45 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      audit_logs: {
-        Row: {
-          action: string
-          created_at: string
-          id: string
-          ip_address: unknown | null
-          new_data: Json | null
-          old_data: Json | null
-          record_id: string | null
-          table_name: string
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          table_name: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          table_name?: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       borrowings: {
         Row: {
           approved_at: string | null
@@ -380,17 +341,6 @@ export type Database = {
     Functions: {
       create_penalty_record: {
         Args: { p_borrowing_id: string; p_amount: number; p_reason: string }
-        Returns: undefined
-      }
-      log_activity: {
-        Args: {
-          p_user_id: string
-          p_action: string
-          p_table_name: string
-          p_record_id?: string
-          p_old_data?: Json
-          p_new_data?: Json
-        }
         Returns: undefined
       }
     }

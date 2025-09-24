@@ -35,8 +35,7 @@ import {
   X,
   Eye,
   Clock,
-  AlertTriangle,
-  FileText
+  AlertTriangle
 } from "lucide-react";
 
 interface BorrowRequest {
@@ -233,20 +232,14 @@ export default function ManageBorrowing() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <ClipboardList className="h-8 w-8" />
-            Manajemen Peminjaman
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Kelola permintaan peminjaman alat test
-          </p>
-        </div>
-        <Button variant="outline" className="gap-2">
-          <FileText className="h-4 w-4" />
-          Export Excel
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold flex items-center gap-3">
+          <ClipboardList className="h-8 w-8" />
+          Manajemen Peminjaman
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Kelola permintaan peminjaman alat test
+        </p>
       </div>
 
       {/* Filters & Search */}

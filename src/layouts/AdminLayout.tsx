@@ -3,15 +3,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminLayout() {
-  const { signOut } = useAuth();
-
-  const handleLogout = async () => {
-    await signOut();
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -25,9 +18,6 @@ export default function AdminLayout() {
                 <span className="text-sm text-muted-foreground">Admin Panel</span>
                 <Button variant="ghost" size="icon">
                   <User className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4" />
                 </Button>
               </div>
             </div>
