@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,7 @@ import {
   User,
   Mail,
   Phone,
-  IdCard,
-  Loader2
+  IdCard
 } from "lucide-react";
 import {
   Select,
@@ -23,32 +22,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     nama: "",
     nim: "",
-    nomor_whatsapp: "",
+    whatsapp: "",
     email: "",
-    jenis_kelamin: "",
+    jenisKelamin: "",
     username: "",
     password: "",
     confirmPassword: ""
   });
   const navigate = useNavigate();
-  const { signUp, user, loading } = useAuth();
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/');
-    }
-  }, [user, loading, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
@@ -56,45 +45,10 @@ export default function Register() {
       return;
     }
 
-    if (!formData.jenis_kelamin) {
-      alert("Silakan pilih jenis kelamin!");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const profileData = {
-        nama: formData.nama,
-        username: formData.username,
-        role: 'mahasiswa' as const, // Default role for registration
-        nim: formData.nim,
-        nomor_whatsapp: formData.nomor_whatsapp,
-        jenis_kelamin: formData.jenis_kelamin as 'laki-laki' | 'perempuan',
-      };
-
-      const { error } = await signUp(formData.email, formData.password, profileData);
-      
-      if (!error) {
-        navigate('/login');
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    // Demo registration logic
+    alert("Registrasi berhasil! Silakan login dengan akun yang telah dibuat.");
+    navigate('/login');
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,7 +66,7 @@ export default function Register() {
               <div>
                 <CardTitle className="text-2xl font-bold">Daftar Akun SIPEMAL</CardTitle>
                 <CardDescription>
-                  Isi form di bawah untuk membuat akun mahasiswa baru
+                  Isi form di bawah untuk membuat akun baru
                 </CardDescription>
               </div>
             </CardHeader>
@@ -133,7 +87,6 @@ export default function Register() {
                       onChange={(e) => setFormData({...formData, nama: e.target.value})}
                       required
                       className="h-11"
-                      disabled={isLoading}
                     />
                   </div>
                   
@@ -150,26 +103,24 @@ export default function Register() {
                       onChange={(e) => setFormData({...formData, nim: e.target.value})}
                       required
                       className="h-11"
-                      disabled={isLoading}
                     />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="nomor_whatsapp" className="flex items-center gap-2">
+                    <Label htmlFor="whatsapp" className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
                       Nomor WhatsApp
                     </Label>
                     <Input
-                      id="nomor_whatsapp"
+                      id="whatsapp"
                       type="tel"
                       placeholder="08xxxxxxxxxx"
-                      value={formData.nomor_whatsapp}
-                      onChange={(e) => setFormData({...formData, nomor_whatsapp: e.target.value})}
+                      value={formData.whatsapp}
+                      onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
                       required
                       className="h-11"
-                      disabled={isLoading}
                     />
                   </div>
                   
@@ -186,25 +137,20 @@ export default function Register() {
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       required
                       className="h-11"
-                      disabled={isLoading}
                     />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="jenis_kelamin">Jenis Kelamin</Label>
-                    <Select 
-                      value={formData.jenis_kelamin} 
-                      onValueChange={(value) => setFormData({...formData, jenis_kelamin: value})}
-                      disabled={isLoading}
-                    >
+                    <Label htmlFor="jenisKelamin">Jenis Kelamin</Label>
+                    <Select value={formData.jenisKelamin} onValueChange={(value) => setFormData({...formData, jenisKelamin: value})}>
                       <SelectTrigger className="h-11">
                         <SelectValue placeholder="Pilih jenis kelamin" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="laki-laki">Laki-laki</SelectItem>
-                        <SelectItem value="perempuan">Perempuan</SelectItem>
+                        <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                        <SelectItem value="Perempuan">Perempuan</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -219,7 +165,6 @@ export default function Register() {
                       onChange={(e) => setFormData({...formData, username: e.target.value})}
                       required
                       className="h-11"
-                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -236,8 +181,6 @@ export default function Register() {
                         onChange={(e) => setFormData({...formData, password: e.target.value})}
                         required
                         className="h-11 pr-10"
-                        disabled={isLoading}
-                        minLength={6}
                       />
                       <Button
                         type="button"
@@ -245,7 +188,6 @@ export default function Register() {
                         size="icon"
                         className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
                         onClick={() => setShowPassword(!showPassword)}
-                        disabled={isLoading}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -262,19 +204,13 @@ export default function Register() {
                       onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                       required
                       className="h-11"
-                      disabled={isLoading}
-                      minLength={6}
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full gap-2" size="lg" disabled={isLoading}>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <UserPlus className="h-4 w-4" />
-                  )}
-                  {isLoading ? 'Memproses...' : 'Daftar Sekarang'}
+                <Button type="submit" className="w-full gap-2" size="lg">
+                  <UserPlus className="h-4 w-4" />
+                  Daftar Sekarang
                 </Button>
               </form>
 

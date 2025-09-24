@@ -7,52 +7,13 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
-      audit_logs: {
-        Row: {
-          action: string
-          created_at: string
-          id: string
-          ip_address: unknown | null
-          new_data: Json | null
-          old_data: Json | null
-          record_id: string | null
-          table_name: string
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          table_name: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          table_name?: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       borrowings: {
         Row: {
           approved_at: string | null
@@ -142,7 +103,6 @@ export type Database = {
           kategori_id: string
           kondisi: string | null
           nama: string
-          status: string | null
           stok: number
           updated_at: string
         }
@@ -154,7 +114,6 @@ export type Database = {
           kategori_id: string
           kondisi?: string | null
           nama: string
-          status?: string | null
           stok?: number
           updated_at?: string
         }
@@ -166,7 +125,6 @@ export type Database = {
           kategori_id?: string
           kondisi?: string | null
           nama?: string
-          status?: string | null
           stok?: number
           updated_at?: string
         }
@@ -382,29 +340,12 @@ export type Database = {
     }
     Functions: {
       create_penalty_record: {
-        Args: { p_amount: number; p_borrowing_id: string; p_reason: string }
-        Returns: undefined
-      }
-      log_activity: {
-        Args: {
-          p_action: string
-          p_new_data?: Json
-          p_old_data?: Json
-          p_record_id?: string
-          p_table_name: string
-          p_user_id: string
-        }
+        Args: { p_borrowing_id: string; p_amount: number; p_reason: string }
         Returns: undefined
       }
     }
     Enums: {
-      borrowing_status:
-        | "pending"
-        | "approved"
-        | "returned"
-        | "rejected"
-        | "active"
-        | "overdue"
+      borrowing_status: "pending" | "approved" | "returned" | "rejected"
       equipment_category: "harus_dikembalikan" | "habis_pakai" | "copy_1"
       gender: "laki-laki" | "perempuan"
       return_status: "initial" | "final" | "completed"
@@ -536,14 +477,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      borrowing_status: [
-        "pending",
-        "approved",
-        "returned",
-        "rejected",
-        "active",
-        "overdue",
-      ],
+      borrowing_status: ["pending", "approved", "returned", "rejected"],
       equipment_category: ["harus_dikembalikan", "habis_pakai", "copy_1"],
       gender: ["laki-laki", "perempuan"],
       return_status: ["initial", "final", "completed"],

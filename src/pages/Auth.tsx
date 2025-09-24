@@ -8,12 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/components/ui/use-toast";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, user, profile } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   // Login form state
@@ -37,11 +35,7 @@ export default function Auth() {
 
   // Redirect authenticated users to their role-specific dashboard
   useEffect(() => {
-    console.log('Auth useEffect - user:', !!user, 'profile:', profile?.role);
-    
     if (user && profile?.role) {
-      // User has a profile, redirect to role-specific dashboard
-      console.log('Redirecting to dashboard for role:', profile.role);
       switch (profile.role) {
         case 'admin':
           navigate('/admin');
@@ -56,19 +50,37 @@ export default function Auth() {
           navigate('/');
       }
     }
-    // Remove the automatic refresh - it causes infinite loop
-    // If profile is null, show error message instead
   }, [user, profile, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     const { error } = await signIn(loginData.email, loginData.password);
     
     if (!error) {
-      // Success message will be shown by useAuth, just wait for redirect
-      // The useEffect will handle the redirect when user and profile are loaded
+      // Wait for profile to be loaded, then redirect based on role
+      const checkProfileAndRedirect = () => {
+        if (profile?.role) {
+          switch (profile.role) {
+            case 'admin':
+              navigate('/admin');
+              break;
+            case 'dosen':
+              navigate('/dosen');
+              break;
+            case 'mahasiswa':
+              navigate('/mahasiswa');
+              break;
+            default:
+              navigate('/');
+          }
+        } else {
+          // If profile not loaded yet, check again after a short delay
+          setTimeout(checkProfileAndRedirect, 500);
+        }
+      };
+      checkProfileAndRedirect();
     }
     
     setIsLoading(false);
@@ -78,32 +90,21 @@ export default function Auth() {
     e.preventDefault();
     
     if (registerData.password !== registerData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Password tidak cocok",
-        variant: "destructive",
-      });
       return;
     }
 
     setIsLoading(true);
 
-    const profileData = {
+    const { error } = await signUp(registerData.email, registerData.password, {
       nama: registerData.nama,
       username: registerData.username,
-      role: registerData.role,
       nim: registerData.nim,
       nomor_whatsapp: registerData.nomor_whatsapp,
       jenis_kelamin: registerData.jenis_kelamin,
-    };
+      role: registerData.role,
+    });
 
-    const { error } = await signUp(registerData.email, registerData.password, profileData);
-    
     if (!error) {
-      toast({
-        title: "Berhasil",
-        description: "Akun berhasil dibuat! Silakan periksa email untuk konfirmasi.",
-      });
       // Reset form
       setRegisterData({
         email: "",
@@ -117,7 +118,7 @@ export default function Auth() {
         role: "mahasiswa",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -231,7 +232,6 @@ export default function Auth() {
                         <SelectContent>
                           <SelectItem value="mahasiswa">Mahasiswa</SelectItem>
                           <SelectItem value="dosen">Dosen</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

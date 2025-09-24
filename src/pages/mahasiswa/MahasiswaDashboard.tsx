@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,155 +14,17 @@ import {
   AlertTriangle,
   FileText,
   User,
-  GraduationCap,
-  Loader2
+  GraduationCap
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-
-interface DashboardStats {
-  activeBorrowings: number;
-  totalBorrowings: number;
-  queueCount: number;
-  completedBorrowings: number;
-}
 
 export default function MahasiswaDashboard() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    activeBorrowings: 0,
-    totalBorrowings: 0,
-    queueCount: 0,
-    completedBorrowings: 0
-  });
-  const [currentBorrows, setCurrentBorrows] = useState<any[]>([]);
-  const [queueStatus, setQueueStatus] = useState<any[]>([]);
-  const [upcomingDeadlines, setUpcomingDeadlines] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user && profile) {
-      fetchDashboardData();
-    }
-  }, [user, profile]);
-
-  const fetchDashboardData = async () => {
-    if (!user) return;
-    
-    try {
-      setLoading(true);
-
-      // Fetch user's borrowings stats
-      const { count: totalBorrowings } = await supabase
-        .from('borrowings')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      const { count: activeBorrowings } = await supabase
-        .from('borrowings')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'approved');
-
-      const { count: completedBorrowings } = await supabase
-        .from('borrowings')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'pending'); // Tidak ada status 'returned' saat ini
-
-      // Fetch queue count (assuming queue table exists)
-      const { count: queueCount } = await supabase
-        .from('equipment_queue')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      setStats({
-        activeBorrowings: activeBorrowings || 0,
-        totalBorrowings: totalBorrowings || 0,
-        queueCount: queueCount || 0,
-        completedBorrowings: completedBorrowings || 0
-      });
-
-      // Fetch current active borrowings
-      const { data: borrowingsData } = await supabase
-        .from('borrowings')
-        .select(`
-          id,
-          tanggal_pinjam,
-          tanggal_kembali,
-          jumlah,
-          catatan,
-          status,
-          equipment!equipment_id (nama),
-          categories!inner(nama)
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false });
-
-      if (borrowingsData) {
-        const formattedBorrows = borrowingsData.map((borrow: any) => ({
-          id: borrow.id,
-          toolName: borrow.equipment?.nama || 'Unknown Equipment',
-          category: 'Alat Test', // Simplified category name
-          startDate: borrow.tanggal_pinjam,
-          dueDate: borrow.tanggal_kembali,
-          status: 'active',
-          purpose: borrow.catatan || 'Tidak ada catatan',
-          daysLeft: Math.ceil((new Date(borrow.tanggal_kembali).getTime() - new Date().getTime()) / (1000 * 3600 * 24))
-        }));
-        setCurrentBorrows(formattedBorrows);
-        
-        // Set upcoming deadlines from active borrows
-        const deadlines = formattedBorrows
-          .filter(borrow => borrow.daysLeft <= 7)
-          .map(borrow => ({
-            id: borrow.id,
-            toolName: borrow.toolName,
-            dueDate: borrow.dueDate,
-            daysLeft: borrow.daysLeft,
-            category: borrow.category
-          }));
-        setUpcomingDeadlines(deadlines);
-      }
-
-      // Fetch queue status
-      const { data: queueData } = await supabase
-        .from('equipment_queue')
-        .select(`
-          id,
-          tanggal_mulai,
-          tanggal_selesai,
-          equipment!equipment_id (nama)
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'waiting');
-
-      if (queueData) {
-        const formattedQueue = queueData.map((queue: any, index: number) => ({
-          id: queue.id,
-          toolName: queue.equipment?.nama || 'Unknown Equipment',
-          category: 'Copy 1',
-          position: index + 1,
-          estimatedDate: queue.tanggal_mulai,
-          currentUser: 'Admin'
-        }));
-        setQueueStatus(formattedQueue);
-      }
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const statsData = [
+  const stats = [
     {
       title: "Sedang Dipinjam",
-      value: stats.activeBorrowings.toString(),
+      value: "2",
       description: "Alat aktif",
       icon: TestTube,
       trend: "+1%",
@@ -171,7 +33,7 @@ export default function MahasiswaDashboard() {
     },
     {
       title: "Total Peminjaman", 
-      value: stats.totalBorrowings.toString(),
+      value: "12",
       description: "Semester ini",
       icon: BookOpen,
       trend: "+3%",
@@ -180,7 +42,7 @@ export default function MahasiswaDashboard() {
     },
     {
       title: "Dalam Antrian",
-      value: stats.queueCount.toString(),
+      value: "1",
       description: "Copy 1",
       icon: Clock,
       trend: "=",
@@ -189,12 +51,55 @@ export default function MahasiswaDashboard() {
     },
     {
       title: "Selesai",
-      value: stats.completedBorrowings.toString(),
+      value: "8",
       description: "Dikembalikan",
       icon: CheckCircle,
       trend: "+2%",
       color: "text-purple-600",
       bgColor: "bg-purple-100"
+    }
+  ];
+
+  const currentBorrows = [
+    {
+      id: "1",
+      toolName: "Beck Depression Inventory (BDI-II)",
+      category: "Habis Pakai",
+      startDate: "2024-01-22",
+      dueDate: "2024-01-22",
+      status: "completed",
+      purpose: "Tugas akhir"
+    },
+    {
+      id: "2",
+      toolName: "WAIS-IV (Wechsler Adult Intelligence Scale)",
+      category: "Harus Dikembalikan", 
+      startDate: "2024-01-20",
+      dueDate: "2024-01-27",
+      status: "active",
+      purpose: "Penelitian skripsi",
+      daysLeft: 3
+    }
+  ];
+
+  const queueStatus = [
+    {
+      id: "1",
+      toolName: "TAT (Thematic Apperception Test)",
+      category: "Copy 1",
+      position: 2,
+      estimatedDate: "2024-01-28",
+      currentUser: "Prof. Michael Lee"
+    }
+  ];
+
+  const upcomingDeadlines = [
+    {
+      id: "1",
+      toolName: "WAIS-IV (Wechsler Adult Intelligence Scale)",
+      dueDate: "2024-01-27",
+      daysLeft: 3,
+      category: "Harus Dikembalikan"
     }
   ];
 
@@ -220,22 +125,6 @@ export default function MahasiswaDashboard() {
     return <CheckCircle className="h-4 w-4 text-green-600" />;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span>Loading dashboard...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -247,15 +136,12 @@ export default function MahasiswaDashboard() {
             <GraduationCap className="h-8 w-8" />
             Dashboard Mahasiswa
           </h1>
-          <p className="text-muted-foreground">
-            Selamat datang kembali, {profile?.nama || 'Mahasiswa'}! 
-            {profile?.nim && ` NIM: ${profile.nim}`}
-          </p>
+          <p className="text-muted-foreground">Selamat datang kembali, Ahmad Rizki! NIM: 2021001</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statsData.map((stat, index) => (
+          {stats.map((stat, index) => (
             <Card key={index} className="hover:shadow-hover transition-all duration-300 border-0 shadow-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -302,14 +188,6 @@ export default function MahasiswaDashboard() {
               <Button 
                 variant="outline" 
                 className="gap-2"
-                onClick={() => navigate('/pengembalian')}
-              >
-                <CheckCircle className="h-4 w-4" />
-                Kembalikan Alat
-              </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2"
                 onClick={() => navigate('/history')}
               >
                 <FileText className="h-4 w-4" />
@@ -350,11 +228,7 @@ export default function MahasiswaDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {currentBorrows.filter(b => b.status === 'active').map((borrow) => (
-                  <div 
-                    key={borrow.id} 
-                    className="p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => navigate('/pengembalian')}
-                  >
+                  <div key={borrow.id} className="p-4 bg-muted/30 rounded-lg">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{borrow.toolName}</h4>
@@ -372,10 +246,7 @@ export default function MahasiswaDashboard() {
                       <div className="text-xs text-muted-foreground">
                         Deadline: {new Date(borrow.dueDate).toLocaleDateString('id-ID')}
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(borrow.status)}
-                        <span className="text-xs text-muted-foreground">Klik untuk kembalikan</span>
-                      </div>
+                      {getStatusBadge(borrow.status)}
                     </div>
                   </div>
                 ))}
@@ -411,11 +282,7 @@ export default function MahasiswaDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {queueStatus.map((queue) => (
-                  <div 
-                    key={queue.id} 
-                    className="p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => navigate('/queue')}
-                  >
+                  <div key={queue.id} className="p-4 bg-muted/30 rounded-lg">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{queue.toolName}</h4>
@@ -428,7 +295,6 @@ export default function MahasiswaDashboard() {
                     <div className="space-y-1 text-xs text-muted-foreground">
                       <div>Sedang dipinjam: {queue.currentUser}</div>
                       <div>Estimasi tersedia: {new Date(queue.estimatedDate).toLocaleDateString('id-ID')}</div>
-                      <div className="text-xs text-primary mt-2">Klik untuk detail antrian</div>
                     </div>
                   </div>
                 ))}
@@ -458,17 +324,12 @@ export default function MahasiswaDashboard() {
           <CardContent>
             <div className="space-y-4">
               {upcomingDeadlines.map((deadline) => (
-                <div 
-                  key={deadline.id} 
-                  className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors"
-                  onClick={() => navigate('/history')}
-                >
+                <div key={deadline.id} className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-center gap-3">
                     {getUrgencyIcon(deadline.daysLeft)}
                     <div>
                       <h4 className="font-medium text-sm">{deadline.toolName}</h4>
                       <p className="text-xs text-muted-foreground">{deadline.category}</p>
-                      <p className="text-xs text-primary">Klik untuk lihat riwayat</p>
                     </div>
                   </div>
                   <div className="text-right">

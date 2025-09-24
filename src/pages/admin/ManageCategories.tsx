@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,16 +30,14 @@ import {
   Trash2,
   Filter
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
 
 interface Category {
   id: string;
   nama: string;
-  deskripsi: string | null;
-  tipe: string;
+  deskripsi: string;
+  aturan: string;
   totalAlat: number;
-  created_at: string;
+  createdDate: string;
 }
 
 export default function ManageCategories() {
@@ -47,197 +45,98 @@ export default function ManageCategories() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
-  const [newCategory, setNewCategory] = useState<{
-    nama: string;
-    deskripsi: string;
-    tipe: "harus_dikembalikan" | "habis_pakai" | "copy_1";
-  }>({
+  // Demo data
+  const [categories, setCategories] = useState<Category[]>([
+    {
+      id: "1",
+      nama: "Harus Dikembalikan",
+      deskripsi: "Alat test yang wajib dikembalikan setelah penggunaan dengan kondisi yang sama",
+      aturan: "Maksimal peminjaman 7 hari. Harus dikembalikan dalam kondisi baik. Dikenakan denda jika terlambat.",
+      totalAlat: 25,
+      createdDate: "2023-01-15"
+    },
+    {
+      id: "2", 
+      nama: "Habis Pakai",
+      deskripsi: "Alat test yang dapat digunakan sekali pakai dan tidak perlu dikembalikan",
+      aturan: "Sekali ambil langsung habis. Tidak ada pengembalian. Terbatas per user per hari.",
+      totalAlat: 150,
+      createdDate: "2023-01-15"
+    },
+    {
+      id: "3",
+      nama: "Copy 1",
+      deskripsi: "Alat test dengan stok terbatas yang memerlukan sistem antrian",
+      aturan: "Hanya 1 exemplar. Sistem antrian jika sedang dipinjam. Maksimal 3 hari peminjaman.",
+      totalAlat: 8,
+      createdDate: "2023-01-15"
+    }
+  ]);
+
+  const [newCategory, setNewCategory] = useState({
     nama: "",
     deskripsi: "",
-    tipe: "harus_dikembalikan"
+    aturan: ""
   });
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const { data: categoriesData, error } = await supabase
-        .from('categories')
-        .select('*');
-
-      if (error) throw error;
-
-      // Count equipment for each category
-      const categoriesWithCount = await Promise.all(
-        categoriesData.map(async (category) => {
-          const { count } = await supabase
-            .from('equipment')
-            .select('*', { count: 'exact' })
-            .eq('kategori_id', category.id);
-
-          return {
-            ...category,
-            totalAlat: count || 0
-          };
-        })
-      );
-
-      setCategories(categoriesWithCount);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast({
-        title: "Error",
-        description: "Gagal memuat data kategori",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredCategories = categories.filter(category =>
     category.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (category.deskripsi && category.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()))
+    category.deskripsi.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddCategory = async () => {
+  const handleAddCategory = () => {
     if (!newCategory.nama || !newCategory.deskripsi) {
-      toast({
-        title: "Validasi Error",
-        description: "Mohon lengkapi nama dan deskripsi kategori!",
-        variant: "destructive",
-      });
+      alert("Mohon lengkapi nama dan deskripsi kategori!");
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .insert([{
-          nama: newCategory.nama,
-          deskripsi: newCategory.deskripsi,
-          tipe: newCategory.tipe
-        }]);
+    const category: Category = {
+      id: (categories.length + 1).toString(),
+      ...newCategory,
+      totalAlat: 0,
+      createdDate: new Date().toISOString().split('T')[0]
+    };
 
-      if (error) throw error;
-
-      toast({
-        title: "Berhasil",
-        description: "Kategori berhasil ditambahkan",
-      });
-
-      setNewCategory({ nama: "", deskripsi: "", tipe: "harus_dikembalikan" });
-      setIsAddDialogOpen(false);
-      fetchCategories();
-    } catch (error) {
-      console.error('Error adding category:', error);
-      toast({
-        title: "Error",
-        description: "Gagal menambahkan kategori",
-        variant: "destructive",
-      });
-    }
+    setCategories([...categories, category]);
+    setNewCategory({ nama: "", deskripsi: "", aturan: "" });
+    setIsAddDialogOpen(false);
   };
 
-  const handleEditCategory = async () => {
+  const handleEditCategory = () => {
     if (!selectedCategory) return;
 
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .update({
-          nama: selectedCategory.nama,
-          deskripsi: selectedCategory.deskripsi,
-          tipe: selectedCategory.tipe as "harus_dikembalikan" | "habis_pakai" | "copy_1"
-        })
-        .eq('id', selectedCategory.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Berhasil",
-        description: "Kategori berhasil diperbarui",
-      });
-
-      setIsEditDialogOpen(false);
-      setSelectedCategory(null);
-      fetchCategories();
-    } catch (error) {
-      console.error('Error updating category:', error);
-      toast({
-        title: "Error",
-        description: "Gagal memperbarui kategori",
-        variant: "destructive",
-      });
-    }
+    setCategories(categories.map(category => 
+      category.id === selectedCategory.id ? selectedCategory : category
+    ));
+    setIsEditDialogOpen(false);
+    setSelectedCategory(null);
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
+  const handleDeleteCategory = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     if (category && category.totalAlat > 0) {
-      toast({
-        title: "Tidak dapat menghapus",
-        description: "Tidak dapat menghapus kategori yang masih memiliki alat!",
-        variant: "destructive",
-      });
+      alert("Tidak dapat menghapus kategori yang masih memiliki alat!");
       return;
     }
 
     if (confirm("Apakah Anda yakin ingin menghapus kategori ini?")) {
-      try {
-        const { error } = await supabase
-          .from('categories')
-          .delete()
-          .eq('id', categoryId);
-
-        if (error) throw error;
-
-        toast({
-          title: "Berhasil",
-          description: "Kategori berhasil dihapus",
-        });
-
-        fetchCategories();
-      } catch (error) {
-        console.error('Error deleting category:', error);
-        toast({
-          title: "Error",
-          description: "Gagal menghapus kategori",
-          variant: "destructive",
-        });
-      }
+      setCategories(categories.filter(category => category.id !== categoryId));
     }
   };
 
-  const getCategoryBadge = (tipe: string) => {
-    switch (tipe) {
-      case "harus_dikembalikan":
+  const getCategoryBadge = (nama: string) => {
+    switch (nama) {
+      case "Harus Dikembalikan":
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Harus Dikembalikan</Badge>;
-      case "habis_pakai":
+      case "Habis Pakai":
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Habis Pakai</Badge>;
-      case "copy_1":
+      case "Copy 1":
         return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Copy 1</Badge>;
       default:
-        return <Badge variant="secondary">{tipe}</Badge>;
+        return <Badge variant="secondary">{nama}</Badge>;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Memuat data kategori...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -291,17 +190,14 @@ export default function ManageCategories() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="tipe">Tipe Kategori *</Label>
-                <select
-                  id="tipe"
-                  value={newCategory.tipe}
-                  onChange={(e) => setNewCategory({...newCategory, tipe: e.target.value as "harus_dikembalikan" | "habis_pakai" | "copy_1"})}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="harus_dikembalikan">Harus Dikembalikan</option>
-                  <option value="habis_pakai">Habis Pakai</option>
-                  <option value="copy_1">Copy 1</option>
-                </select>
+                <Label htmlFor="aturan">Aturan Peminjaman</Label>
+                <Textarea
+                  id="aturan"
+                  value={newCategory.aturan}
+                  onChange={(e) => setNewCategory({...newCategory, aturan: e.target.value})}
+                  placeholder="Aturan dan kebijakan peminjaman untuk kategori ini..."
+                  rows={4}
+                />
               </div>
             </div>
             
@@ -345,7 +241,7 @@ export default function ManageCategories() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  {getCategoryBadge(category.tipe)}
+                  {getCategoryBadge(category.nama)}
                   <CardTitle className="text-xl">{category.nama}</CardTitle>
                 </div>
                 <div className="flex gap-2">
@@ -370,10 +266,15 @@ export default function ManageCategories() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {category.deskripsi && (
+              <div>
+                <h4 className="font-semibold text-sm mb-1">Deskripsi:</h4>
+                <p className="text-sm text-muted-foreground">{category.deskripsi}</p>
+              </div>
+              
+              {category.aturan && (
                 <div>
-                  <h4 className="font-semibold text-sm mb-1">Deskripsi:</h4>
-                  <p className="text-sm text-muted-foreground">{category.deskripsi}</p>
+                  <h4 className="font-semibold text-sm mb-1">Aturan Peminjaman:</h4>
+                  <p className="text-sm text-muted-foreground">{category.aturan}</p>
                 </div>
               )}
               
@@ -383,7 +284,7 @@ export default function ManageCategories() {
                   <span className="text-muted-foreground"> alat terdaftar</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Dibuat: {new Date(category.created_at).toLocaleDateString('id-ID')}
+                  Dibuat: {new Date(category.createdDate).toLocaleDateString('id-ID')}
                 </div>
               </div>
             </CardContent>
@@ -414,23 +315,19 @@ export default function ManageCategories() {
               <div className="space-y-2">
                 <Label>Deskripsi</Label>
                 <Textarea
-                  value={selectedCategory.deskripsi || ""}
+                  value={selectedCategory.deskripsi}
                   onChange={(e) => setSelectedCategory({...selectedCategory, deskripsi: e.target.value})}
                   rows={3}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label>Tipe Kategori</Label>
-                <select
-                  value={selectedCategory.tipe}
-                  onChange={(e) => setSelectedCategory({...selectedCategory, tipe: e.target.value})}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="harus_dikembalikan">Harus Dikembalikan</option>
-                  <option value="habis_pakai">Habis Pakai</option>
-                  <option value="copy_1">Copy 1</option>
-                </select>
+                <Label>Aturan Peminjaman</Label>
+                <Textarea
+                  value={selectedCategory.aturan}
+                  onChange={(e) => setSelectedCategory({...selectedCategory, aturan: e.target.value})}
+                  rows={4}
+                />
               </div>
             </div>
             
