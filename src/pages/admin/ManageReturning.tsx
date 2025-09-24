@@ -265,14 +265,20 @@ export default function ManageReturning() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <RotateCcw className="h-8 w-8" />
-          Manajemen Pengembalian
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Kelola proses pengembalian alat test (2 tahap)
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <RotateCcw className="h-8 w-8" />
+            Manajemen Pengembalian
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Kelola proses pengembalian alat test (2 tahap)
+          </p>
+        </div>
+        <Button variant="outline" className="gap-2">
+          <FileText className="h-4 w-4" />
+          Export Excel
+        </Button>
       </div>
 
       {/* Filters & Search */}

@@ -197,6 +197,14 @@ export default function DosenDashboard() {
               <Button 
                 variant="outline" 
                 className="gap-2"
+                onClick={() => navigate('/pengembalian')}
+              >
+                <CheckCircle className="h-4 w-4" />
+                Kembalikan Alat
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2"
                 onClick={() => navigate('/history')}
               >
                 <FileText className="h-4 w-4" />
@@ -229,7 +237,11 @@ export default function DosenDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {currentBorrows.filter(b => b.status === 'active').map((borrow) => (
-                  <div key={borrow.id} className="p-4 bg-muted/30 rounded-lg">
+                  <div 
+                    key={borrow.id} 
+                    className="p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => navigate('/pengembalian')}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{borrow.toolName}</h4>
@@ -246,7 +258,10 @@ export default function DosenDashboard() {
                       <div className="text-xs text-muted-foreground">
                         Deadline: {new Date(borrow.dueDate).toLocaleDateString('id-ID')}
                       </div>
-                      {getStatusBadge(borrow.status)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(borrow.status)}
+                        <span className="text-xs text-muted-foreground">Klik untuk kembalikan</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -282,7 +297,11 @@ export default function DosenDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg">
+                  <div 
+                    key={activity.id} 
+                    className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => navigate('/history')}
+                  >
                     <div className="flex-shrink-0 mt-1">
                       {activity.status === 'completed' ? (
                         <CheckCircle className="h-4 w-4 text-green-600" />
@@ -301,6 +320,7 @@ export default function DosenDashboard() {
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(activity.date).toLocaleDateString('id-ID')}
                       </p>
+                      <p className="text-xs text-primary mt-1">Klik untuk detail riwayat</p>
                     </div>
                   </div>
                 ))}

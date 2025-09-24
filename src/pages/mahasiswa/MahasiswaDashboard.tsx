@@ -188,6 +188,14 @@ export default function MahasiswaDashboard() {
               <Button 
                 variant="outline" 
                 className="gap-2"
+                onClick={() => navigate('/pengembalian')}
+              >
+                <CheckCircle className="h-4 w-4" />
+                Kembalikan Alat
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2"
                 onClick={() => navigate('/history')}
               >
                 <FileText className="h-4 w-4" />
@@ -228,7 +236,11 @@ export default function MahasiswaDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {currentBorrows.filter(b => b.status === 'active').map((borrow) => (
-                  <div key={borrow.id} className="p-4 bg-muted/30 rounded-lg">
+                  <div 
+                    key={borrow.id} 
+                    className="p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => navigate('/pengembalian')}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{borrow.toolName}</h4>
@@ -246,7 +258,10 @@ export default function MahasiswaDashboard() {
                       <div className="text-xs text-muted-foreground">
                         Deadline: {new Date(borrow.dueDate).toLocaleDateString('id-ID')}
                       </div>
-                      {getStatusBadge(borrow.status)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(borrow.status)}
+                        <span className="text-xs text-muted-foreground">Klik untuk kembalikan</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -282,7 +297,11 @@ export default function MahasiswaDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {queueStatus.map((queue) => (
-                  <div key={queue.id} className="p-4 bg-muted/30 rounded-lg">
+                  <div 
+                    key={queue.id} 
+                    className="p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => navigate('/queue')}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{queue.toolName}</h4>
@@ -295,6 +314,7 @@ export default function MahasiswaDashboard() {
                     <div className="space-y-1 text-xs text-muted-foreground">
                       <div>Sedang dipinjam: {queue.currentUser}</div>
                       <div>Estimasi tersedia: {new Date(queue.estimatedDate).toLocaleDateString('id-ID')}</div>
+                      <div className="text-xs text-primary mt-2">Klik untuk detail antrian</div>
                     </div>
                   </div>
                 ))}
@@ -324,12 +344,17 @@ export default function MahasiswaDashboard() {
           <CardContent>
             <div className="space-y-4">
               {upcomingDeadlines.map((deadline) => (
-                <div key={deadline.id} className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div 
+                  key={deadline.id} 
+                  className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors"
+                  onClick={() => navigate('/history')}
+                >
                   <div className="flex items-center gap-3">
                     {getUrgencyIcon(deadline.daysLeft)}
                     <div>
                       <h4 className="font-medium text-sm">{deadline.toolName}</h4>
                       <p className="text-xs text-muted-foreground">{deadline.category}</p>
+                      <p className="text-xs text-primary">Klik untuk lihat riwayat</p>
                     </div>
                   </div>
                   <div className="text-right">
