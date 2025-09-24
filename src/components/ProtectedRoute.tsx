@@ -15,11 +15,13 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   useEffect(() => {
     if (!loading) {
       if (!user) {
+        console.log('No user found, redirecting to auth');
         navigate('/auth');
         return;
       }
 
       if (requiredRole && profile?.role !== requiredRole) {
+        console.log(`User role ${profile?.role} doesn't match required role ${requiredRole}, redirecting to /`);
         navigate('/');
         return;
       }

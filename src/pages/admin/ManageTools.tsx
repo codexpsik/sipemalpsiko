@@ -38,7 +38,8 @@ import {
   Filter,
   Package,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  FileText
 } from "lucide-react";
 
 interface Tool {
@@ -266,13 +267,18 @@ export default function ManageTools() {
           </p>
         </div>
 
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Tambah Alat
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Import Excel
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Tambah Alat
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Tambah Alat Baru</DialogTitle>
@@ -351,6 +357,7 @@ export default function ManageTools() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters & Search */}

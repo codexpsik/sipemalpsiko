@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,22 +8,85 @@ import {
   TestTube, 
   Clock,
   CheckCircle,
-  Star,
   Calendar,
   TrendingUp,
   AlertTriangle,
   FileText,
-  User
+  User,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+
+interface DashboardStats {
+  activeBorrowings: number;
+  totalBorrowings: number;
+  pendingApprovals: number;
+  completedBorrowings: number;
+}
 
 export default function DosenDashboard() {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    activeBorrowings: 0,
+    totalBorrowings: 0,
+    pendingApprovals: 0,
+    completedBorrowings: 0
+  });
+  const [currentBorrows, setCurrentBorrows] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
+  useEffect(() => {
+    if (user && profile) {
+      fetchDashboardData();
+    }
+  }, [user, profile]);
+
+  const fetchDashboardData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+
+      // Fetch dosen's borrowings stats
+      const { count: totalBorrowings } = await supabase
+        .from('borrowings')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      const { count: activeBorrowings } = await supabase
+        .from('borrowings')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'approved');
+
+      const { count: pendingApprovals } = await supabase
+        .from('borrowings')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'pending');
+
+      setStats({
+        activeBorrowings: activeBorrowings || 0,
+        totalBorrowings: totalBorrowings || 0,
+        pendingApprovals: pendingApprovals || 0,
+        completedBorrowings: 0
+      });
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statsData = [
     {
       title: "Sedang Dipinjam",
-      value: "3",
+      value: stats.activeBorrowings.toString(),
       description: "Alat aktif",
       icon: TestTube,
       trend: "+1%",
@@ -32,7 +95,7 @@ export default function DosenDashboard() {
     },
     {
       title: "Total Peminjaman", 
-      value: "28",
+      value: stats.totalBorrowings.toString(),
       description: "Bulan ini",
       icon: BookOpen,
       trend: "+5%",
@@ -41,7 +104,7 @@ export default function DosenDashboard() {
     },
     {
       title: "Menunggu Approval",
-      value: "2",
+      value: stats.pendingApprovals.toString(),
       description: "Pending request",
       icon: Clock,
       trend: "=",
@@ -50,7 +113,7 @@ export default function DosenDashboard() {
     },
     {
       title: "Selesai Bulan Ini",
-      value: "15",
+      value: stats.completedBorrowings.toString(),
       description: "Dikembalikan",
       icon: CheckCircle,
       trend: "+3%",
@@ -59,83 +122,21 @@ export default function DosenDashboard() {
     }
   ];
 
-  const currentBorrows = [
-    {
-      id: "1",
-      toolName: "MMPI-2 (Minnesota Multiphasic Personality Inventory)",
-      category: "Harus Dikembalikan",
-      startDate: "2024-01-20",
-      dueDate: "2024-01-27",
-      status: "active",
-      daysLeft: 3
-    },
-    {
-      id: "2",
-      toolName: "WAIS-IV (Wechsler Adult Intelligence Scale)",
-      category: "Harus Dikembalikan", 
-      startDate: "2024-01-18",
-      dueDate: "2024-01-25",
-      status: "active",
-      daysLeft: 1
-    },
-    {
-      id: "3",
-      toolName: "Beck Depression Inventory (BDI-II)",
-      category: "Habis Pakai",
-      startDate: "2024-01-22",
-      dueDate: "2024-01-22",
-      status: "completed",
-      daysLeft: 0
-    }
-  ];
-
-  const recentActivity = [
-    {
-      id: "1",
-      action: "Peminjaman Disetujui",
-      item: "TAT (Thematic Apperception Test)",
-      date: "2024-01-22",
-      status: "approved"
-    },
-    {
-      id: "2", 
-      action: "Pengembalian Selesai",
-      item: "Rorschach Inkblot Test",
-      date: "2024-01-21",
-      status: "completed"
-    },
-    {
-      id: "3",
-      action: "Request Submitted",
-      item: "Stanford-Binet Intelligence Scales",
-      date: "2024-01-20",
-      status: "pending"
-    }
-  ];
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Aktif</Badge>;
-      case "completed":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Selesai</Badge>;
-      case "approved":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Disetujui</Badge>;
-      case "pending":
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-300">Menunggu</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
-
-  const getUrgencyIcon = (daysLeft: number) => {
-    if (daysLeft <= 1) {
-      return <AlertTriangle className="h-4 w-4 text-red-600" />;
-    } else if (daysLeft <= 3) {
-      return <Clock className="h-4 w-4 text-yellow-600" />;
-    }
-    return <CheckCircle className="h-4 w-4 text-green-600" />;
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span>Loading dashboard...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -144,13 +145,18 @@ export default function DosenDashboard() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard Dosen</h1>
-          <p className="text-muted-foreground">Selamat datang kembali, Dr. Sarah Wilson!</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
+            <User className="h-8 w-8" />
+            Dashboard Dosen
+          </h1>
+          <p className="text-muted-foreground">
+            Selamat datang kembali, {profile?.nama || 'Dosen'}!
+          </p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <Card key={index} className="hover:shadow-hover transition-all duration-300 border-0 shadow-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -187,137 +193,25 @@ export default function DosenDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4">
-              <Button 
-                className="gap-2" 
-                onClick={() => navigate('/peminjaman')}
-              >
+              <Button className="gap-2" onClick={() => navigate('/peminjaman')}>
                 <TestTube className="h-4 w-4" />
                 Pinjam Alat Baru
               </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2"
-                onClick={() => navigate('/history')}
-              >
+              <Button variant="outline" className="gap-2" onClick={() => navigate('/pengembalian')}>
+                <CheckCircle className="h-4 w-4" />
+                Kembalikan Alat
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={() => navigate('/history')}>
                 <FileText className="h-4 w-4" />
                 Riwayat Peminjaman
               </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2"
-                onClick={() => navigate('/profile')}
-              >
+              <Button variant="outline" className="gap-2" onClick={() => navigate('/profile')}>
                 <User className="h-4 w-4" />
                 Edit Profile
               </Button>
             </div>
           </CardContent>
         </Card>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Current Borrows */}
-          <Card className="shadow-card border-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TestTube className="h-5 w-5" />
-                Sedang Dipinjam
-              </CardTitle>
-              <CardDescription>
-                Alat yang sedang Anda pinjam
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {currentBorrows.filter(b => b.status === 'active').map((borrow) => (
-                  <div key={borrow.id} className="p-4 bg-muted/30 rounded-lg">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">{borrow.toolName}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">{borrow.category}</p>
-                      </div>
-                      <div className="flex items-center gap-1 ml-2">
-                        {getUrgencyIcon(borrow.daysLeft)}
-                        <span className="text-xs font-medium">
-                          {borrow.daysLeft > 0 ? `${borrow.daysLeft} hari` : 'Hari ini'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="text-xs text-muted-foreground">
-                        Deadline: {new Date(borrow.dueDate).toLocaleDateString('id-ID')}
-                      </div>
-                      {getStatusBadge(borrow.status)}
-                    </div>
-                  </div>
-                ))}
-                
-                {currentBorrows.filter(b => b.status === 'active').length === 0 && (
-                  <div className="text-center py-8">
-                    <TestTube className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Tidak ada alat yang sedang dipinjam</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => navigate('/peminjaman')}
-                    >
-                      Pinjam Alat Sekarang
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card className="shadow-card border-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Aktivitas Terbaru
-              </CardTitle>
-              <CardDescription>
-                Riwayat aktivitas peminjaman
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg">
-                    <div className="flex-shrink-0 mt-1">
-                      {activity.status === 'completed' ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : activity.status === 'approved' ? (
-                        <CheckCircle className="h-4 w-4 text-blue-600" />
-                      ) : (
-                        <Clock className="h-4 w-4 text-yellow-600" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium">{activity.action}</p>
-                        {getStatusBadge(activity.status)}
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">{activity.item}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(activity.date).toLocaleDateString('id-ID')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-6">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate('/history')}
-                >
-                  Lihat Semua Aktivitas
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
